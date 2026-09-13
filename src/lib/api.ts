@@ -1,4 +1,5 @@
-import { clearSession, getRefreshToken, getToken, setSession } from "./auth";
+import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
+import { mapApiError } from "./errors";
 
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -8,22 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  const token = getToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(`${base}${path}`, { ...init, headers });
-  if (res.status === 401 && retry && getRefreshToken()) {
-    const ok = await refreshTokens();
-    if (ok) return request<T>(path, init, false);
-    clearSession();
-  }
-  if (!res.ok) throw new ApiError(res.status, await res.text());
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
+let refreshingPromise: Promise<boolean> | null = null;
 
 async function refreshTokens(): Promise<boolean> {
   const refreshToken = getRefreshToken();
@@ -36,7 +22,33 @@ async function refreshTokens(): Promise<boolean> {
   if (!res.ok) return false;
   const data = (await res.json()) as AuthResponse;
   setSession(data.token, data.refreshToken);
+  setUser({ userId: data.userId, email: data.email, name: data.name });
   return true;
+}
+
+async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${base}${path}`, { ...init, headers });
+
+  if (res.status === 401 && retry && getRefreshToken()) {
+    const isAuthEndpoint = path === "/api/v1/auth/login" || path === "/api/v1/auth/register" || path === "/api/v1/auth/refresh";
+    if (!isAuthEndpoint) {
+      if (!refreshingPromise) {
+        refreshingPromise = refreshTokens().finally(() => { refreshingPromise = null; });
+      }
+      const ok = await refreshingPromise;
+      if (ok) return request<T>(path, init, false);
+      clearSession();
+      clearUser();
+    }
+  }
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }
 
 export type AuthResponse = {
@@ -112,3 +124,5 @@ export const api = {
     request<ShortUrlResponse>(`/api/v1/urls/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   archiveUrl: (id: string) => request<void>(`/api/v1/urls/${id}`, { method: "DELETE" })
 };
+
+export { mapApiError };
