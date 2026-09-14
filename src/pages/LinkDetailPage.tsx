@@ -9,7 +9,7 @@ export default function LinkDetailPage() {
   const q = useQuery({ queryKey: ["url", id], queryFn: () => api.getUrl(id) });
   const archive = useMutation({
     mutationFn: () => api.archiveUrl(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["url", id] })
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["url", id] }),
   });
   if (q.isPending) return <p>Carregando</p>;
   if (q.error || !q.data) return <p>Link nao encontrado.</p>;
@@ -19,7 +19,14 @@ export default function LinkDetailPage() {
       <h1 className="text-2xl font-semibold">{link.id}</h1>
       <p className="break-all">{link.originalUrl}</p>
       <p className="text-sm text-muted-foreground">cliques: {link.clickCount}</p>
-      <Button type="button" variant="outline" onClick={() => archive.mutate()} disabled={!!link.deletedAt}>Arquivar</Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => archive.mutate()}
+        disabled={!!link.deletedAt}
+      >
+        Arquivar
+      </Button>
     </div>
   );
 }

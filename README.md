@@ -28,13 +28,13 @@ origin.
 
 ## Tech Stack
 
-| Category | Technology |
-| :--- | :--- |
+| Category          | Technology                                                                                                                                                                                                                  |
+| :---------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Language & UI** | ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black) |
-| **Bundler** | ![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white) |
-| **Styling** | ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge) |
-| **Data** | ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white) |
-| **Routing** | ![React Router](https://img.shields.io/badge/React_Router-7-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white) |
+| **Bundler**       | ![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)                                                                                                                           |
+| **Styling**       | ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge)                  |
+| **Data**          | ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white)                                                                                                   |
+| **Routing**       | ![React Router](https://img.shields.io/badge/React_Router-7-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white)                                                                                                    |
 
 - **UI:** React 19 + Vite, mobile-first Tailwind v4, shadcn/ui (New York, CSS variables).
 - **HTTP:** `fetch` in `src/lib/api.ts`. Bearer JWT from `AuthResponse.token`.
@@ -111,21 +111,25 @@ Serve `dist/` from NGINX:
 
 ## Commands
 
-| Purpose | Command |
-| :--- | :--- |
-| Dev server (proxy → `:8080`) | `npm run dev` |
-| Production bundle | `npm run build` |
-| Preview `dist/` | `npm run preview` |
-| Add a shadcn component | `npx shadcn@latest add card input` |
+| Purpose                                | Command                            |
+| :------------------------------------- | :--------------------------------- |
+| Dev server (proxy → `:8080`)           | `npm run dev`                      |
+| Production bundle                      | `npm run build`                    |
+| Preview `dist/`                        | `npm run preview`                  |
+| Lint (ESLint, incl. module boundaries) | `npm run lint`                     |
+| Type-check                             | `npm run typecheck`                |
+| **Done gate** (lint + type + build)    | `npm run check`                    |
+| Format                                 | `npm run format`                   |
+| Add a shadcn component                 | `npx shadcn@latest add card input` |
 
 ## Routes
 
-| UI path | Page | Backend |
-| :--- | :--- | :--- |
-| `/` | Home — shorten | `POST /api/v1/urls` |
-| `/login` | Login | `POST /api/v1/auth/login` |
-| `/register` | Register | `POST /api/v1/auth/register` |
-| `/links` | List (auth) | `GET /api/v1/urls?limit=&cursor=` |
+| UI path      | Page                    | Backend                                      |
+| :----------- | :---------------------- | :------------------------------------------- |
+| `/`          | Home — shorten          | `POST /api/v1/urls`                          |
+| `/login`     | Login                   | `POST /api/v1/auth/login`                    |
+| `/register`  | Register                | `POST /api/v1/auth/register`                 |
+| `/links`     | List (auth)             | `GET /api/v1/urls?limit=&cursor=`            |
 | `/links/:id` | Detail / archive (auth) | `GET` / `PATCH` / `DELETE /api/v1/urls/{id}` |
 
 Auth bodies: register `{ name, email, password }`, login `{ email, password }`,
@@ -137,16 +141,19 @@ Response: `{ id, shortUrl }`.
 
 ## API contract
 
-Source of truth: [url-shortener-service README](https://github.com/daniel-castilho/url-shortener-service).
+Request/response payloads and status codes are captured verbatim from the
+backend's OpenAPI spec in **[`docs/api-contract.md`](docs/api-contract.md)**
+(re-generate from `/v3/api-docs` when the backend changes). Backend source of
+truth: [url-shortener-service](https://github.com/daniel-castilho/url-shortener-service).
 
-| Status | Meaning in this UI |
-| :--- | :--- |
-| `400` | validation / e-mail in use / bad cursor / archived immutable |
-| `401` | refresh then re-login |
-| `403` | not the owner |
-| `404` | unknown or archived id |
-| `409` | vanity alias taken |
-| `429` | rate limit on shorten |
+| Status | Meaning in this UI                                           |
+| :----- | :----------------------------------------------------------- |
+| `400`  | validation / e-mail in use / bad cursor / archived immutable |
+| `401`  | refresh then re-login                                        |
+| `403`  | not the owner                                                |
+| `404`  | unknown or archived id                                       |
+| `409`  | vanity alias taken                                           |
+| `429`  | rate limit on shorten                                        |
 
 ## Current State
 

@@ -41,8 +41,22 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/links" element={<Private><LinksPage /></Private>} />
-      <Route path="/links/:id" element={<Private><LinkDetailPage /></Private>} />
+      <Route
+        path="/links"
+        element={
+          <Private>
+            <LinksPage />
+          </Private>
+        }
+      />
+      <Route
+        path="/links/:id"
+        element={
+          <Private>
+            <LinkDetailPage />
+          </Private>
+        }
+      />
     </Routes>
   );
 }

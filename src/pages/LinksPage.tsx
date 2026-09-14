@@ -16,7 +16,9 @@ export default function LinksPage() {
       <ul className="space-y-2">
         {q.data.items.map((item) => (
           <li key={item.id}>
-            <Link className="underline" to={`/links/${item.id}`}>{item.id}</Link>
+            <Link className="underline" to={`/links/${item.id}`}>
+              {item.id}
+            </Link>
             <span className="ml-2 text-sm text-muted-foreground">{item.originalUrl}</span>
           </li>
         ))}

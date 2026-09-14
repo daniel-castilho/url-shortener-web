@@ -4,7 +4,10 @@ import { mapApiError } from "./errors";
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -17,7 +20,7 @@ async function refreshTokens(): Promise<boolean> {
   const res = await fetch(`${base}/api/v1/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ refreshToken })
+    body: JSON.stringify({ refreshToken }),
   });
   if (!res.ok) return false;
   const data = (await res.json()) as AuthResponse;
@@ -35,10 +38,15 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   const res = await fetch(`${base}${path}`, { ...init, headers });
 
   if (res.status === 401 && retry && getRefreshToken()) {
-    const isAuthEndpoint = path === "/api/v1/auth/login" || path === "/api/v1/auth/register" || path === "/api/v1/auth/refresh";
+    const isAuthEndpoint =
+      path === "/api/v1/auth/login" ||
+      path === "/api/v1/auth/register" ||
+      path === "/api/v1/auth/refresh";
     if (!isAuthEndpoint) {
       if (!refreshingPromise) {
-        refreshingPromise = refreshTokens().finally(() => { refreshingPromise = null; });
+        refreshingPromise = refreshTokens().finally(() => {
+          refreshingPromise = null;
+        });
       }
       const ok = await refreshingPromise;
       if (ok) return request<T>(path, init, false);
@@ -109,9 +117,15 @@ export type UpdateLinkRequest = {
 
 export const api = {
   register: (name: string, email: string, password: string) =>
-    request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ name, email, password }) }),
+    request<AuthResponse>("/api/v1/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
+    }),
   login: (email: string, password: string) =>
-    request<AuthResponse>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request<AuthResponse>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
   shorten: (body: ShortenRequest) =>
     request<ShortenResponse>("/api/v1/urls", { method: "POST", body: JSON.stringify(body) }),
   listUrls: (limit = 20, cursor?: string) => {
@@ -121,8 +135,11 @@ export const api = {
   },
   getUrl: (id: string) => request<ShortUrlResponse>(`/api/v1/urls/${id}`),
   updateUrl: (id: string, body: UpdateLinkRequest) =>
-    request<ShortUrlResponse>(`/api/v1/urls/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  archiveUrl: (id: string) => request<void>(`/api/v1/urls/${id}`, { method: "DELETE" })
+    request<ShortUrlResponse>(`/api/v1/urls/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  archiveUrl: (id: string) => request<void>(`/api/v1/urls/${id}`, { method: "DELETE" }),
 };
 
 export { mapApiError };

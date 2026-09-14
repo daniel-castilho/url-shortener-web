@@ -5,6 +5,7 @@ This document records the three authentication decisions for the SPA that are no
 ## Backend Contract (Fixed)
 
 The backend (`url-shortener-service`) defines:
+
 - Stateless JWT (HS256), no server session — Factor 6
 - Two tokens: `access` (~24h, `app.jwt.expiration-ms`), `refresh` (~7d, `app.jwt.refresh-expiration-ms`)
 - Endpoints: `POST /api/v1/auth/register|login|refresh`
@@ -23,12 +24,14 @@ This contract is closed. The frontend does not need: HttpOnly cookies, CSRF toke
 **Choice**: Store `token`, `refreshToken`, `userId`, `email`, `name` in `sessionStorage`.
 
 **Rationale**:
+
 - Aligns with backend's stateless JWT model (Factor 6) — tokens live in client memory/storage, not server
 - `sessionStorage` clears on tab close — matches "no session" philosophy; no persistent credential across browser restarts
 - `localStorage` would survive XSS = account takeover; `sessionStorage` limits blast radius to the tab
 - No mixed storage (some keys in session, some in local) — single source of truth
 
 **Keys**:
+
 ```
 us.token          → access token
 us.refreshToken   → refresh token
@@ -44,6 +47,7 @@ us.name           → user display name
 ## Decision 2 — 401 Handling: Single-Flight Refresh + Hard Logout
 
 **Behavior**:
+
 1. Request receives `401`
 2. **One** refresh attempt shared across all concurrent 401s (mutex / "single flight")
 3. Refresh succeeds → update tokens in storage → retry original request **once**
@@ -55,6 +59,7 @@ us.name           → user display name
 6. Skip refresh for: `/login`, `/register`, `/refresh` endpoints
 
 **Why not rotation / proactive refresh**:
+
 - Backend refresh endpoint returns new `access` (+ optionally new `refreshToken`); no documented rotation requirement
 - Access TTL is 24h — proactive renewal adds complexity without benefit
 - Single-flight prevents refresh token burnout under concurrent 401s
@@ -64,23 +69,26 @@ us.name           → user display name
 ## Decision 3 — Reactive Session: React Context (`AuthProvider`)
 
 **Choice**: Wrap app in `AuthProvider` exposing:
+
 ```ts
 interface AuthContextValue {
-  user: User | null;           // { userId, email, name } | null
-  token: string | null;        // access token
-  isAuthenticated: boolean;    // !!token
+  user: User | null; // { userId, email, name } | null
+  token: string | null; // access token
+  isAuthenticated: boolean; // !!token
   login(auth: AuthResponse): void;
-  logout(): void;              // clears storage, invalidates queries, navigate("/")
+  logout(): void; // clears storage, invalidates queries, navigate("/")
 }
 ```
 
 **Lifecycle**:
+
 - On mount: read `sessionStorage` → hydrate `user` + `token`
 - `login(auth)`: write to storage + update context → instant UI update (nav, Private routes)
 - `logout()`: clear storage + `queryClient.invalidateQueries()` + `navigate("/")`
 - Reload: `AuthProvider` re-reads storage → UI stays authenticated without full reload
 
 **What this is NOT**:
+
 - Not a server session (Factor 6 unchanged)
 - Not cookie/HttpOnly/BFF — tokens remain in JS memory/storage
 - Not OpenID / SSO — purely local React state synced with `sessionStorage`
@@ -89,11 +97,11 @@ interface AuthContextValue {
 
 ## Summary Table
 
-| Decision          | Option Chosen              | Backend Factor |
-|-------------------|----------------------------|----------------|
-| Token storage     | `sessionStorage` (all keys) | 6 (stateless)  |
-| 401 strategy      | Single-flight refresh → hard logout | — |
-| Session reactivity| React Context + storage sync | 6 (no server session) |
+| Decision           | Option Chosen                       | Backend Factor        |
+| ------------------ | ----------------------------------- | --------------------- |
+| Token storage      | `sessionStorage` (all keys)         | 6 (stateless)         |
+| 401 strategy       | Single-flight refresh → hard logout | —                     |
+| Session reactivity | React Context + storage sync        | 6 (no server session) |
 
 ---
 

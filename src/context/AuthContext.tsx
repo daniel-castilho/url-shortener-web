@@ -1,7 +1,15 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { getToken, getUser, setSession, setUser, clearSession, clearUser, type User } from "@/lib/auth";
+import {
+  getToken,
+  getUser,
+  setSession,
+  setUser,
+  clearSession,
+  clearUser,
+  type User,
+} from "@/lib/auth";
 import type { AuthResponse } from "@/lib/api";
 
 interface AuthContextValue {
