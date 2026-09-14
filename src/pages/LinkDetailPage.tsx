@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
@@ -26,6 +27,7 @@ export default function LinkDetailPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["url", id] });
       qc.invalidateQueries({ queryKey: ["urls"] });
+      setEditOpen(false);
     },
   });
   const archive = useMutation({
@@ -64,44 +66,60 @@ export default function LinkDetailPage() {
     });
     if (Object.keys(patch).length > 0) update.mutate(patch);
   }
+  const fields: Array<[string, string]> = [
+    ["URL original", link.originalUrl],
+    ["cliques", String(link.clickCount)],
+    ["criado em", link.createdAt],
+  ];
+  if (link.title) fields.push(["título", link.title]);
+  if (link.tags && link.tags.length > 0) fields.push(["tags", link.tags.join(", ")]);
+  if (link.expiresAt) fields.push(["expira em", link.expiresAt]);
   return (
-    <div className="space-y-3">
-      <Link className="text-sm underline" to="/links">
+    <div className="space-y-4">
+      <Link className="text-sm underline underline-offset-4" to="/links">
         ← Voltar aos links
       </Link>
-      <h1 className="break-all text-2xl font-semibold">{link.shortUrl}</h1>
-      <p className="break-all">{link.originalUrl}</p>
-      <p className="text-sm text-muted-foreground">id: {link.id}</p>
-      <p className="text-sm text-muted-foreground">cliques: {link.clickCount}</p>
-      {link.title && <p className="text-sm text-muted-foreground">título: {link.title}</p>}
-      {link.tags && link.tags.length > 0 && (
-        <p className="text-sm text-muted-foreground">tags: {link.tags.join(", ")}</p>
-      )}
-      {link.expiresAt && (
-        <p className="text-sm text-muted-foreground">expira em: {link.expiresAt}</p>
-      )}
-      <p className="text-sm text-muted-foreground">
-        criado em: {link.createdAt}
-        {link.deletedAt ? " — arquivado" : ""}
-      </p>
-      <div className="space-y-1">
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={onEditOpen} disabled={!!link.deletedAt}>
-            Editar
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => archive.mutate()}
-            disabled={!!link.deletedAt || archive.isPending}
-          >
-            Arquivar
-          </Button>
-        </div>
-        {archive.error && <ApiErrorMessage error={archive.error} />}
-      </div>
+      <Card>
+        <CardHeader className="px-4 [.border-b]:pb-4">
+          <CardTitle className="break-all text-xl">{link.shortUrl}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            id: {link.id}
+            {link.deletedAt ? " — arquivado" : ""}
+          </p>
+        </CardHeader>
+        <CardContent className="px-4">
+          <dl className="space-y-2">
+            {fields.map(([label, value]) => (
+              <div key={label} className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
+                <dt className="text-sm text-muted-foreground">{label}</dt>
+                <dd className="max-w-full break-all text-sm sm:text-right">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-4 space-y-1">
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={onEditOpen} disabled={!!link.deletedAt}>
+                Editar
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => archive.mutate()}
+                disabled={!!link.deletedAt || archive.isPending}
+              >
+                Arquivar
+              </Button>
+            </div>
+            {update.isSuccess && !editOpen && <p className="text-sm text-muted-foreground">Salvo.</p>}
+            {archive.isSuccess && !archive.isPending && (
+              <p className="text-sm text-muted-foreground">Arquivado.</p>
+            )}
+            {archive.error && <ApiErrorMessage error={archive.error} />}
+          </div>
+        </CardContent>
+      </Card>
       {editOpen && (
-        <form onSubmit={onEditSubmit} className="mt-4 space-y-3">
+        <form onSubmit={onEditSubmit} className="space-y-3">
           <h2 className="text-lg font-semibold">Editar</h2>
           <div className="space-y-2">
             <Label htmlFor="edit-title">Título</Label>
