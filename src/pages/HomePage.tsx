@@ -4,15 +4,22 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { api } from "@/lib/api";
+import { isValidHttpUrl } from "@/lib/url";
 
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const [originalUrl, setOriginalUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
   const [ttlSeconds, setTtlSeconds] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
   const shorten = useMutation({ mutationFn: api.shorten });
   function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isValidHttpUrl(originalUrl)) {
+      setUrlError("URL inválida. Use http:// ou https://");
+      return;
+    }
+    setUrlError(null);
     shorten.mutate({
       originalUrl,
       ...(customAlias ? { customAlias } : {}),
@@ -52,6 +59,7 @@ export default function HomePage() {
       <Button type="submit" disabled={shorten.isPending}>
         Encurtar
       </Button>
+      {urlError && <p className="text-sm text-destructive">{urlError}</p>}
       {shorten.data && <p className="break-all text-sm">{shorten.data.shortUrl}</p>}
       {shorten.error && <ApiErrorMessage error={shorten.error} />}
     </form>
