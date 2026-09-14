@@ -70,6 +70,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   section (preview/UAT/prod, `VITE_API_BASE_URL` empty same-origin); release
   workflow on tag `v*` uploading `dist/` as an artifact.
 
+## [Unreleased]
+
+### Added
+
+- **Analytics panel (Epic 7)** — clickCount totals formatted (pt-BR) on list
+  and detail; series panel on detail with CSS bar chart (no external lib,
+  lazy-loaded chunk); `formatClickCount` and `toBarPoints` pure helpers
+  tested; `GET /api/v1/urls/{id}/clicks?unit=day` consumed with exact DTO
+  names (`ClickAnalyticsResponse`, `ClickSeriesPoint`); lazy-loaded chart
+  chunk (`React.lazy` + `Suspense` on detail only).
+
 ## [0.1.0] - 2026-09-13
 
 ### Added
