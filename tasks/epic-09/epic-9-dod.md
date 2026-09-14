@@ -96,14 +96,26 @@ src/lib/auth-mode.ts:    return process.env.VITE_AUTH_MODE;
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+completed	success	feat(auth): Epic 9 — Dual-mode auth (bearer|cookie), /me rehydrate, /logout	CI	epic-9-sessao-dura	pull_request	34879554356	20s	2026-09-14T18:14:07Z
+completed	success	ci: bump actions to v5 (Node 24 runtime) — clears Node 20 deprecation…	CI	main	push	34863123442	19s	2026-09-14T15:35:09Z
+completed	success	Merge pull request #7 from daniel-castilho/epic-8-confianca	CI	main	push	34862854428	21s	2026-09-14T15:32:45Z
+completed	success	Merge pull request #6 from daniel-castilho/epic-7-analytics-panel	CI	main	push	34856071622	21s	2026-09-14T14:30:38Z
+completed	success	feat(analytics): Epic 7 — Analytics panel (formatClickCount, series chart, lazy chunk)	CI	epic-7-analytics-panel	pull_request	34856041659	26s	2026-09-14T14:30:23Z
+completed	success	Merge pull request #5 from daniel-castilho/epic-6-edge-deploy	CI	main	push	34843357485	17s	2026-09-14T12:25:37Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843268126	24s	2026-09-14T12:24:42Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843085550	18s	2026-09-14T12:22:41Z
+completed	success	Merge pull request #4 from daniel-castilho/epic-5-shell-design-system	CI	main	push	34807386448	22s	2026-09-14T04:48:33Z
+completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807328396	19s	2026-09-14T04:47:30Z
+```
+
+Run/sha pair: `34879554356` @ head `7a1cafe` — CI `success` on this PR.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
-- [x] Default mode is still bearer (`.env.example: VITE_AUTH_MODE=bearer`)
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
+- [x] Default mode is still bearer
 - [x] No Java repo files
 - [ ] Owner sanctions quoted
 - [x] No self-declared EPIC 9 CLOSED
