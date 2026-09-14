@@ -7,7 +7,7 @@ Rule zero — zero-from-memory. Paste or Hypothesis (TD-13).
 ### git log --oneline main..HEAD
 
 ```
-<final-sha> docs: epic-8 evidence + dod
+ea72246 docs: epic-8 evidence + dod
 a4872fb build(deps): pin @playwright/test in lockfile
 692af6d docs: changelog + readme e2e section (8.5)
 c62b8ed ci: opt-in e2e job, skip-by-default (8.3)
