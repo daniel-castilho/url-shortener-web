@@ -41,6 +41,21 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   tested) and invalidating list + detail, archive marks in place
   (idempotent — disabled once archived) and invalidates both queries.
 
+## [Unreleased]
+
+### Added
+
+- **Shell & design system (Epic 5)** — shared header on every route
+  ("Tyny URL" product name + consolidated nav + user greeting + Sair);
+  shadcn primitives `Input`, `Label`, `Card`, `Dialog` (deps:
+  `@radix-ui/react-label`, `@radix-ui/react-dialog` — sanctioned); all four
+  forms migrated to `Label`+`Input` primitives; shared `EmptyState` component;
+  links list as card rows (id, originalUrl, clickCount); detail as a labeled
+  field Card; archive behind a confirmation Dialog with inline "Salvo." /
+  "Arquivado." feedback (one feedback pattern — persistent inline text, no
+  toast library); mobile-first verified at 375px (no horizontal overflow, nav
+  wraps, full-width fields).
+
 ## [0.1.0] - 2026-09-13
 
 ### Added

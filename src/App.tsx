@@ -16,20 +16,32 @@ function Private({ children }: { children: React.ReactNode }) {
 function Nav() {
   const { user, isAuthenticated, logout } = useAuth();
   return (
-    <nav className="mb-8 flex flex-wrap gap-4 text-sm">
-      <Link to="/">In\u00edcio</Link>
+    <nav className="flex flex-wrap items-center gap-4 text-sm">
+      <Link to="/" className="font-semibold">
+        Início
+      </Link>
       {isAuthenticated ? (
         <>
-          <Link to="/links">Links</Link>
-          <span className="text-muted-foreground ml-auto">Ol\u00e1, {user?.name}</span>
-          <button type="button" onClick={logout} className="underline hover:text-primary">
+          <Link to="/links" className="underline-offset-4 hover:underline">
+            Links
+          </Link>
+          <span className="ml-auto text-muted-foreground">Olá, {user?.name}</span>
+          <button
+            type="button"
+            onClick={logout}
+            className="underline-offset-4 hover:text-primary hover:underline"
+          >
             Sair
           </button>
         </>
       ) : (
         <>
-          <Link to="/login">Entrar</Link>
-          <Link to="/register">Registrar</Link>
+          <Link to="/login" className="ml-auto underline-offset-4 hover:underline">
+            Entrar
+          </Link>
+          <Link to="/register" className="underline-offset-4 hover:underline">
+            Registrar
+          </Link>
         </>
       )}
     </nav>
@@ -66,7 +78,12 @@ export default function App() {
   return (
     <AuthProvider>
       <div className="mx-auto min-h-svh w-full max-w-2xl px-4 py-8">
-        <Nav />
+        <header className="mb-8 space-y-4">
+          <Link to="/" className="text-2xl font-semibold tracking-tight">
+            Tyny URL
+          </Link>
+          <Nav />
+        </header>
         <ErrorBoundary>
           <AppRoutes />
         </ErrorBoundary>
