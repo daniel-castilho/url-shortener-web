@@ -78,13 +78,25 @@ Total: 1 test in 1 file
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+completed	success	feat(e2e): Epic 8 — Playwright runner, happy-path spec, CI opt-in, a11y floor	CI	epic-8-confianca	pull_request	34862471237	19s	2026-09-14T15:29:21Z
+completed	success	Merge pull request #6 from daniel-castilho/epic-7-analytics-panel	CI	main	push	34856071622	21s	2026-09-14T14:30:38Z
+completed	success	feat(analytics): Epic 7 — Analytics panel (formatClickCount, series chart, lazy chunk)	CI	epic-7-analytics-panel	pull_request	34856041659	26s	2026-09-14T14:30:23Z
+completed	success	feat(analytics): Epic 7 — Analytics panel (formatClickCount, series chart, lazy chunk)	CI	epic-7-analytics-panel	pull_request	34855947695	20s	2026-09-14T14:29:31Z
+completed	success	Merge pull request #5 from daniel-castilho/epic-6-edge-deploy	CI	main	push	34843357485	17s	2026-09-14T12:25:37Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843268126	24s	2026-09-14T12:24:42Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843085550	18s	2026-09-14T12:22:41Z
+completed	success	Merge pull request #4 from daniel-castilho/epic-5-shell-design-system	CI	main	push	34807386448	22s	2026-09-14T04:48:33Z
+completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807328396	19s	2026-09-14T04:47:30Z
+completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807177839	22s	2026-09-14T04:44:57Z
+```
+
+Run/sha pair: `34862471237` @ head `563b19e` — CI `success` on this PR.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (4abe461 contains Epic 7)
 - [ ] Owner sanctions quoted
