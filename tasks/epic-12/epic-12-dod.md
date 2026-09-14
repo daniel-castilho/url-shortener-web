@@ -89,7 +89,19 @@ brief). Once a tag is pushed, its run URL + release URL belong here.
 
 ### CI run on PR
 
-(paste after PR CI completes)
+    $ gh pr checks 12
+    E2E (opt-in)              skipping  0   (runs/34908958512/job/104192025846)
+    Test + Typecheck + Build  pass     23s  (runs/34908958512/job/104191930627)
+
+    $ gh run list --limit 5
+    completed success Epic 12: Release parity — dist archive + CycloneDX SBOM + SHA256SUMS  CI  epic-12-release-sbom  pull_request  34908958512  26s  2026-09-14T23:27:31Z
+    completed success Merge pull request #11 from daniel-castilho/epic-11-edge-headers       CI  main                push          34898297193  38s  2026-09-14T21:20:56Z
+    completed success build(deploy): Epic 11 — Security headers on the SPA document         CI  epic-11-edge-headers  pull_request  34898198403  25s  2026-09-14T21:19:56Z
+    completed success build(deploy): Epic 11 — Security headers on the SPA document         CI  epic-11-edge-headers  pull_request  34897685548  22s  2026-09-14T21:14:43Z
+    completed success Merge pull request #10 from daniel-castilho/epic-10-integration-msw    CI  main                push          34889626670  32s  2026-09-14T19:53:34Z
+
+    PR: https://github.com/daniel-castilho/url-shortener-web/pull/12
+    HEAD sha at CI: 19dce0b850a241b152728c63f1b51a86f1f327f0 (run 34908958512)
 
 ### Decisions (recorded)
 
