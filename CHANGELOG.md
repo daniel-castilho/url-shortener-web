@@ -18,6 +18,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   like the other pages; CI runs `npm test` before build.
 - **Hard-logout bridge** — failed refresh now clears React context + Query cache + navigates to `/login`; successful refresh syncs context token/user via session-events notifier
 
+## [Unreleased]
+
+### Added
+
+- **Shorten flow as product (Epic 3)** — auth-gated optional fields on Home
+  (`customAlias` + `ttlSeconds` only when logged in; anonymous posts
+  `originalUrl` only), client-side URL validation before fetch
+  (`isValidHttpUrl`), `Retry-After` parsing on `429` ("Muitas tentativas.
+  Tente em Ns."), copy-to-clipboard on success with visible failure feedback,
+  and the last shortened URL stays on screen.
+
 ## [0.1.0] - 2026-09-13
 
 ### Added

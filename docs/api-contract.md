@@ -199,3 +199,9 @@ Client-only addition (backend echoes, no contract change): every request,
 including the refresh call, sends an `X-Request-Id` header (UUID generated per
 attempt — a retry after 401/refresh gets a fresh id). The id is carried on
 `ApiError.requestId` and displayed in the error UI for support triage.
+
+On `429` the client reads `Retry-After` (seconds form only; HTTP-date is
+ignored) and carries it on `ApiError.retryAfterSec`; when present the error
+copy shows the wait time. Note: `Retry-After` is only readable cross-origin
+if the backend exposes it via `Access-Control-Expose-Headers` — otherwise the
+generic `429` copy applies. Wire format unchanged.
