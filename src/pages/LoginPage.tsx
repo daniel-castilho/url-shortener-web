@@ -1,22 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { api, ApiError } from "@/lib/api";
-import { mapApiError } from "@/lib/errors";
-
-function ApiErrorMessage({ error }: { error: unknown }) {
-  if (error instanceof ApiError) {
-    return (
-      <>
-        <p className="text-sm text-destructive">{mapApiError(error.status)}</p>
-        {error.requestId && (
-          <p className="text-xs text-muted-foreground">id: {error.requestId}</p>
-        )}
-      </>
-    );
-  }
-  return <p className="text-sm text-destructive">{String(error)}</p>;
-}
+import { ApiErrorMessage } from "@/components/ApiErrorMessage";
+import { api } from "@/lib/api";
 
 export default function LoginPage() {
   const { login } = useAuth();
