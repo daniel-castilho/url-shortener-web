@@ -1,4 +1,4 @@
-export function mapApiError(status: number): string {
+export function mapApiError(status: number, retryAfterSec?: number): string {
   switch (status) {
     case 400:
       return "Dados inv\u00e1lidos.";
@@ -9,8 +9,16 @@ export function mapApiError(status: number): string {
     case 409:
       return "Este alias j\u00e1 existe.";
     case 429:
-      return "Muitas tentativas. Espere um pouco.";
+      return typeof retryAfterSec === "number"
+        ? `Muitas tentativas. Tente em ${retryAfterSec}s.`
+        : "Muitas tentativas. Espere um pouco.";
     default:
       return "N\u00e3o foi poss\u00edvel completar a opera\u00e7\u00e3o.";
   }
+}
+
+export function parseRetryAfter(header: string | null): number | undefined {
+  if (header === null || !/^\d+$/.test(header)) return undefined;
+  const value = Number(header);
+  return Number.isFinite(value) ? value : undefined;
 }
