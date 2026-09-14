@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { mapApiError } from "@/lib/errors";
 
 export default function HomePage() {
   const [originalUrl, setOriginalUrl] = useState("");
@@ -16,6 +17,7 @@ export default function HomePage() {
       <h1 className="text-2xl font-semibold">Encurtar URL</h1>
       <input
         className="w-full rounded-md border border-input px-3 py-2"
+        type="url"
         required
         placeholder="https://"
         value={originalUrl}
@@ -31,7 +33,20 @@ export default function HomePage() {
         Encurtar
       </Button>
       {shorten.data && <p className="break-all text-sm">{shorten.data.shortUrl}</p>}
-      {shorten.error && <p className="text-sm text-destructive">{String(shorten.error)}</p>}
+      {shorten.error && (
+        <div className="space-y-1">
+          {shorten.error instanceof ApiError ? (
+            <>
+              <p className="text-sm text-destructive">{mapApiError(shorten.error.status)}</p>
+              {shorten.error.requestId && (
+                <p className="text-xs text-muted-foreground">id: {shorten.error.requestId}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-destructive">{String(shorten.error)}</p>
+          )}
+        </div>
+      )}
     </form>
   );
 }
