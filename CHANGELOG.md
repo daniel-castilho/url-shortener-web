@@ -29,6 +29,18 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   Tente em Ns."), copy-to-clipboard on success with visible failure feedback,
   and the last shortened URL stays on screen.
 
+## [Unreleased]
+
+### Added
+
+- **Links library (Epic 4)** — cursor-paginated list (`useInfiniteQuery`,
+  `Mais` button, page 1 preserved while fetching), empty state with Home link,
+  detail page with contract fields (`shortUrl`, `originalUrl`, `clickCount`,
+  `expiresAt`, `title`, `tags`, archived badge) + back link, `404` error
+  mapping, edit form sending PATCH with only filled fields (`buildPatch`,
+  tested) and invalidating list + detail, archive marks in place
+  (idempotent — disabled once archived) and invalidates both queries.
+
 ## [0.1.0] - 2026-09-13
 
 ### Added
