@@ -76,13 +76,18 @@ deploy/nginx/spa.conf:85:	add_header X-Frame-Options "DENY" always;
 
 ### gh run list --limit 5
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+completed	success	build(deploy): Epic 11 — Security headers on the SPA document (Caddy + NGINX)	CI	epic-11-edge-headers	pull_request	34897685548	22s	2026-09-14T21:14:43Z
+completed	success	Merge pull request #10 from daniel-castilho/epic-10-integration-msw	CI	main	push	34889626670	32s	2026-09-14T19:53:34Z
+...
+```
+
+Run/sha pair: `34897685548` @ head `5152bfd` — CI `success` on this PR.
 
 ## Self-audit
 
 - [x] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Run/sha pair pasted or LOCAL
 - [x] Default mode is still bearer (VITE_AUTH_MODE not flipped)
 - [x] No Java repo files
 - [x] Owner sanctions quoted (in PR body)
