@@ -153,11 +153,17 @@ src/
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
 | Tests                          | Kernel suite exists (`npm test` = `node --test` on `src/lib`); no DOM/React tests yet, no coverage floors    |
 | Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); thin BFF next step                 |
+| Release SBOM                  | Release workflow uploads `dist/` only; CycloneDX SBOM not generated (timeboxed out of Epic 6)               |
 
 ## Backend parity
 
 Behaviors that must match the service:
 
+- **The SPA is served at the edge; redirects stay on Java.** Edge configs
+  (`deploy/caddy/Caddyfile`, `deploy/nginx/spa.conf`, law in
+  `docs/deploy.md`) proxy `/api*`, `/actuator*` and short-code paths
+  (`GET /{id}`) to the API and must never fall back to `index.html` for a
+  short code.
 - Redirects happen on the backend (`GET /{id}` → 302). The SPA prettifies
   errors like `410` (expired) and `404`, it does **not** redirect.
 - Rate limiting on shorten (`429`) is backend-enforced — surface it in the UI,
