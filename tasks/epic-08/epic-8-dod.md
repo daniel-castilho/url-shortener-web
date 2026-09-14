@@ -91,7 +91,7 @@ completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn prim
 completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807177839	22s	2026-09-14T04:44:57Z
 ```
 
-Run/sha pair: `34862471237` @ head `563b19e` — CI `success` on this PR.
+Run/sha pair: `34862705898` @ head `f8d5e2c` — CI `success` on this PR.
 
 ## 2. Self-audit
 
