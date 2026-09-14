@@ -2,6 +2,7 @@ import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser
 import { mapApiError, parseRetryAfter } from "./errors";
 import { emitSession } from "./session-events";
 import { createRefreshCoordinator } from "./refresh-coordinator";
+import { isCookieAuth } from "./auth-mode";
 
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -21,17 +22,21 @@ function newRequestId(): string {
 }
 
 const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
+  const cookieMode = isCookieAuth();
+  const refreshToken = cookieMode ? undefined : getRefreshToken();
+  if (!cookieMode && !refreshToken) return false;
   const res = await fetch(`${base}/api/v1/auth/refresh`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json", Accept: "application/json", "X-Request-Id": newRequestId() },
-    body: JSON.stringify({ refreshToken }),
+    body: cookieMode ? undefined : JSON.stringify({ refreshToken }),
   });
   if (!res.ok) return false;
   const data = (await res.json()) as AuthResponse;
-  setSession(data.token, data.refreshToken);
-  setUser({ userId: data.userId, email: data.email, name: data.name });
+  if (!cookieMode) {
+    setSession(data.token, data.refreshToken);
+    setUser({ userId: data.userId, email: data.email, name: data.name });
+  }
   emitSession({ type: "refreshed" });
   return true;
 });
@@ -42,11 +47,14 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   headers.set("Accept", "application/json");
   headers.set("X-Request-Id", requestId);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  const token = getToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(`${base}${path}`, { ...init, headers });
+  const cookieMode = isCookieAuth();
+  if (!cookieMode) {
+    const token = getToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+  }
+  const res = await fetch(`${base}${path}`, { ...init, headers, credentials: "include" });
 
-  if (res.status === 401 && retry && getRefreshToken()) {
+  if (res.status === 401 && retry && !cookieMode && getRefreshToken()) {
     const isAuthEndpoint =
       path === "/api/v1/auth/login" ||
       path === "/api/v1/auth/register" ||
@@ -70,6 +78,12 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
 export type AuthResponse = {
   token: string;
   refreshToken: string;
+  userId: string;
+  email: string;
+  name: string;
+};
+
+export type UserResponse = {
   userId: string;
   email: string;
   name: string;
@@ -150,6 +164,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
+  me: () => request<UserResponse>("/api/v1/auth/me"),
+  logout: () => request<void>("/api/v1/auth/logout", { method: "POST" }),
   shorten: (body: ShortenRequest) =>
     request<ShortenResponse>("/api/v1/urls", { method: "POST", body: JSON.stringify(body) }),
   listUrls: (limit = 20, cursor?: string) => {
