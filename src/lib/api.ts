@@ -9,9 +9,14 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public requestId?: string,
   ) {
     super(message);
   }
+}
+
+function newRequestId(): string {
+  return crypto.randomUUID();
 }
 
 const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> => {
@@ -19,7 +24,7 @@ const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> =
   if (!refreshToken) return false;
   const res = await fetch(`${base}/api/v1/auth/refresh`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", "X-Request-Id": newRequestId() },
     body: JSON.stringify({ refreshToken }),
   });
   if (!res.ok) return false;
@@ -31,8 +36,10 @@ const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> =
 });
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const requestId = newRequestId();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
+  headers.set("X-Request-Id", requestId);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -51,7 +58,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       emitSession({ type: "cleared" });
     }
   }
-  if (!res.ok) throw new ApiError(res.status, await res.text());
+  if (!res.ok) throw new ApiError(res.status, await res.text(), requestId);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }

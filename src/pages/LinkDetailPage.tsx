@@ -1,7 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { mapApiError } from "@/lib/errors";
 
 export default function LinkDetailPage() {
   const { id = "" } = useParams();
@@ -12,7 +13,19 @@ export default function LinkDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["url", id] }),
   });
   if (q.isPending) return <p>Carregando</p>;
-  if (q.error || !q.data) return <p>Link nao encontrado.</p>;
+  if (q.error) {
+    const err = q.error;
+    if (err instanceof ApiError) {
+      return (
+        <div className="space-y-1">
+          <p className="text-destructive">{mapApiError(err.status)}</p>
+          {err.requestId && <p className="text-xs text-muted-foreground">id: {err.requestId}</p>}
+        </div>
+      );
+    }
+    return <p className="text-destructive">Link nao encontrado.</p>;
+  }
+  if (!q.data) return <p>Link nao encontrado.</p>;
   const link = q.data;
   return (
     <div className="space-y-3">

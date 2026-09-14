@@ -4,11 +4,25 @@ import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { mapApiError } from "@/lib/errors";
 
+function ApiErrorMessage({ error }: { error: unknown }) {
+  if (error instanceof ApiError) {
+    return (
+      <>
+        <p className="text-sm text-destructive">{mapApiError(error.status)}</p>
+        {error.requestId && (
+          <p className="text-xs text-muted-foreground">id: {error.requestId}</p>
+        )}
+      </>
+    );
+  }
+  return <p className="text-sm text-destructive">{String(error)}</p>;
+}
+
 export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -16,11 +30,7 @@ export default function LoginPage() {
       const auth = await api.login(email, password);
       login(auth);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(mapApiError(err.status));
-      } else {
-        setError(String(err));
-      }
+      setError(err);
     }
   }
   return (
@@ -41,7 +51,7 @@ export default function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <Button type="submit">Login</Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error !== null && <ApiErrorMessage error={error} />}
     </form>
   );
 }

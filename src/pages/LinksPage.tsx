@@ -7,8 +7,16 @@ export default function LinksPage() {
   const q = useQuery({ queryKey: ["urls"], queryFn: () => api.listUrls() });
   if (q.isPending) return <p>Carregando</p>;
   if (q.error) {
-    const msg = q.error instanceof ApiError ? mapApiError(q.error.status) : String(q.error);
-    return <p className="text-destructive">{msg}</p>;
+    const err = q.error;
+    if (err instanceof ApiError) {
+      return (
+        <div className="space-y-1">
+          <p className="text-destructive">{mapApiError(err.status)}</p>
+          {err.requestId && <p className="text-xs text-muted-foreground">id: {err.requestId}</p>}
+        </div>
+      );
+    }
+    return <p className="text-destructive">{String(err)}</p>;
   }
   return (
     <div className="space-y-4">
