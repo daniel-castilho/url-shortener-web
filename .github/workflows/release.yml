@@ -8,6 +8,8 @@ jobs:
   dist:
     name: Build dist artifact
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -21,12 +23,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Kernel tests
+        run: npm test
+
+      - name: Integration tests
+        run: npm run test:integration
+
       - name: Build
         run: npm run build
 
-      - name: Upload dist
+      - name: Pack dist archive
+        run: tar -czf "url-shortener-web-${{ github.ref_name }}.tar.gz" dist
+
+      - name: Generate CycloneDX SBOM
+        run: npm sbom --sbom-format cyclonedx --omit dev --package-lock-only > "sbom-url-shortener-web-${{ github.ref_name }}.json"
+
+      - name: Compute and verify SHA256SUMS
+        run: |
+          sha256sum "url-shortener-web-${{ github.ref_name }}.tar.gz" "sbom-url-shortener-web-${{ github.ref_name }}.json" > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Upload release files
         uses: actions/upload-artifact@v5
         with:
-          name: dist-${{ github.ref_name }}
-          path: dist/
+          name: release-${{ github.ref_name }}
+          path: |
+            url-shortener-web-${{ github.ref_name }}.tar.gz
+            sbom-url-shortener-web-${{ github.ref_name }}.json
+            SHA256SUMS
           retention-days: 30
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3.0.3
+        with:
+          files: |
+            url-shortener-web-${{ github.ref_name }}.tar.gz
+            sbom-url-shortener-web-${{ github.ref_name }}.json
+            SHA256SUMS
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
