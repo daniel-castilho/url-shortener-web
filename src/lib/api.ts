@@ -123,6 +123,22 @@ export type UpdateLinkRequest = {
   domain?: string | null;
 };
 
+export type ClickSeriesPoint = {
+  time: string;
+  clicks: number;
+};
+
+export type ClickAnalyticsResponse = {
+  id: string;
+  unit: string;
+  from: string;
+  to: string;
+  totalClicks: number;
+  series: ClickSeriesPoint[];
+  breakdown: Record<string, Record<string, number>>;
+  uniquePerBucket: Record<string, number>;
+};
+
 export const api = {
   register: (name: string, email: string, password: string) =>
     request<AuthResponse>("/api/v1/auth/register", {
@@ -148,6 +164,8 @@ export const api = {
       body: JSON.stringify(body),
     }),
   archiveUrl: (id: string) => request<void>(`/api/v1/urls/${id}`, { method: "DELETE" }),
+  getClicks: (id: string) =>
+    request<ClickAnalyticsResponse>(`/api/v1/urls/${id}/clicks?unit=day`),
 };
 
 export { mapApiError };
