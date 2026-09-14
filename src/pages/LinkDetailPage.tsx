@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, Suspense, lazy } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,17 @@ import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { api } from "@/lib/api";
 import { buildPatch } from "@/lib/link-edit";
 
+const ClicksChart = lazy(() => import("@/components/ClicksChart").then((m) => ({ default: m.ClicksChart })));
+
 export default function LinkDetailPage() {
   const { id = "" } = useParams();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["url", id], queryFn: () => api.getUrl(id) });
+  const clicks = useQuery({
+    queryKey: ["url-clicks", id],
+    queryFn: () => api.getClicks(id),
+    enabled: !!id,
+  });
   const [editOpen, setEditOpen] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [title, setTitle] = useState("");
@@ -50,17 +57,6 @@ export default function LinkDetailPage() {
   if (q.error) return <ApiErrorMessage error={q.error} />;
   if (!q.data) return <p>Link nao encontrado.</p>;
   const link = q.data;
-  function onEditOpen() {
-    setTitle(link.title ?? "");
-    setTags(link.tags ? link.tags.join(", ") : "");
-    setUtmSource(link.utm?.source ?? "");
-    setUtmMedium(link.utm?.medium ?? "");
-    setUtmCampaign(link.utm?.campaign ?? "");
-    setUtmTerm(link.utm?.term ?? "");
-    setUtmContent(link.utm?.content ?? "");
-    setExpiresAt(link.expiresAt ?? "");
-    setEditOpen(true);
-  }
   function onEditSubmit(e: FormEvent) {
     e.preventDefault();
     const patch = buildPatch({
@@ -107,7 +103,7 @@ export default function LinkDetailPage() {
           </dl>
           <div className="mt-4 space-y-1">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={onEditOpen} disabled={!!link.deletedAt}>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(true)} disabled={!!link.deletedAt}>
                 Editar
               </Button>
               <Button
@@ -234,6 +230,20 @@ export default function LinkDetailPage() {
           {update.error && <ApiErrorMessage error={update.error} />}
         </form>
       )}
+      <Card className="mt-4">
+        <CardHeader className="px-4 [.border-b]:pb-4">
+          <CardTitle className="text-lg font-semibold">Análise de cliques</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4">
+          {clicks.isPending && <p className="text-sm text-muted-foreground">Carregando análise...</p>}
+          {clicks.error && <ApiErrorMessage error={clicks.error} />}
+          {clicks.data && (
+            <Suspense fallback={<p className="text-sm text-muted-foreground">Carregando gráfico...</p>}>
+              <ClicksChart series={clicks.data.series} totalClicks={clicks.data.totalClicks} />
+            </Suspense>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
