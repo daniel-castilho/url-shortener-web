@@ -1,5 +1,5 @@
 import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
-import { mapApiError } from "./errors";
+import { mapApiError, parseRetryAfter } from "./errors";
 import { emitSession } from "./session-events";
 import { createRefreshCoordinator } from "./refresh-coordinator";
 
@@ -10,6 +10,7 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public requestId?: string,
+    public retryAfterSec?: number,
   ) {
     super(message);
   }
@@ -58,7 +59,10 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       emitSession({ type: "cleared" });
     }
   }
-  if (!res.ok) throw new ApiError(res.status, await res.text(), requestId);
+  if (!res.ok) {
+    const retryAfterSec = res.status === 429 ? parseRetryAfter(res.headers.get("Retry-After")) : undefined;
+    throw new ApiError(res.status, await res.text(), requestId, retryAfterSec);
+  }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
