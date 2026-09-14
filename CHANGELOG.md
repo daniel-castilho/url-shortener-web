@@ -56,6 +56,20 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   toast library); mobile-first verified at 375px (no horizontal overflow, nav
   wraps, full-width fields).
 
+## [Unreleased]
+
+### Added
+
+- **Edge deploy (Epic 6)** — routing law documented
+  ([`docs/deploy.md`](docs/deploy.md)): API prefixes + short codes → Java,
+  SPA routes + fallback → `dist/`, short-code matcher
+  `^/[A-Za-z0-9_-]{1,64}$` with reserved-path exclusions; UAT
+  [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile) (env-driven
+  `SITE_ADDRESS`/`JAVA_UPSTREAM`); prod [`deploy/nginx/spa.conf`](deploy/nginx/spa.conf)
+  (Blue/Green root swap, exact/`^~` beats the short-code regex); README Deploy
+  section (preview/UAT/prod, `VITE_API_BASE_URL` empty same-origin); release
+  workflow on tag `v*` uploading `dist/` as an artifact.
+
 ## [0.1.0] - 2026-09-13
 
 ### Added
