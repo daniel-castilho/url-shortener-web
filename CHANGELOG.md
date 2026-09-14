@@ -10,6 +10,14 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **Cookie-mode refresh loop (hotfix)** — `401` on any non-auth endpoint now
+  triggers the single-flight refresh in cookie mode (`cookieMode ||
+  Boolean(getRefreshToken())`), so the `refresh_token` cookie is sent instead of
+  dropping to "Sessão expirada"; retry once, hard-logout on failure stays.
+  Kernel test proves the gate invokes the coordinator. `engines.node >= 24` +
+  `.nvmrc` declared; `api.ts` imports carry `.ts` specifiers so the kernel
+  suite can load the fetch boundary.
+
 - **Hard session (Epic 9)** — dual-mode auth (`VITE_AUTH_MODE=bearer|cookie`); fetch always `credentials: "include"`; `Authorization` header only in bearer mode; refresh with empty body in cookie mode; `GET /api/v1/auth/me` rehydrate on mount; `POST /api/v1/auth/logout` call on logout; AuthProvider mount handles 200/401/404 in cookie mode; kernel tests for mode branching; `twelve-factors.md` Decision 1 updated to dual-mode.
 
 - **Quality gate (Epic 2)** — kernel test suite with `node --test`

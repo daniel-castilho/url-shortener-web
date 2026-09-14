@@ -1,19 +1,24 @@
-import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
-import { mapApiError, parseRetryAfter } from "./errors";
-import { emitSession } from "./session-events";
-import { createRefreshCoordinator } from "./refresh-coordinator";
-import { isCookieAuth } from "./auth-mode";
+import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth.ts";
+import { mapApiError, parseRetryAfter } from "./errors.ts";
+import { emitSession } from "./session-events.ts";
+import { createRefreshCoordinator } from "./refresh-coordinator.ts";
+import { isCookieAuth } from "./auth-mode.ts";
 
-const base = import.meta.env.VITE_API_BASE_URL ?? "";
+const base =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ??
+  (typeof process !== "undefined" && process.env?.VITE_API_BASE_URL) ??
+  "";
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public requestId?: string,
-    public retryAfterSec?: number,
-  ) {
+  status: number;
+  requestId?: string;
+  retryAfterSec?: number;
+
+  constructor(status: number, message: string, requestId?: string, retryAfterSec?: number) {
     super(message);
+    this.status = status;
+    this.requestId = requestId;
+    this.retryAfterSec = retryAfterSec;
   }
 }
 
@@ -54,7 +59,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   }
   const res = await fetch(`${base}${path}`, { ...init, headers, credentials: "include" });
 
-  if (res.status === 401 && retry && !cookieMode && getRefreshToken()) {
+  if (res.status === 401 && retry && (cookieMode || Boolean(getRefreshToken()))) {
     const isAuthEndpoint =
       path === "/api/v1/auth/login" ||
       path === "/api/v1/auth/register" ||

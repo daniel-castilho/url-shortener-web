@@ -12,8 +12,8 @@ on the backend; there is no BFF in this cut.
   server cache via TanStack Query.
 
 Sources of truth: `README.md`, `package.json`, `docs/api-contract.md`,
-`docs/coding-standards.md`, `docs/adr/*`, `docs/twelve-factors.md`. Re-read the
-relevant parts before starting any task.
+`docs/coding-standards.md`, `docs/adr/*`, `docs/testing.md`,
+`docs/twelve-factors.md`. Re-read the relevant parts before starting any task.
 
 > **Scope:** this documents the **target** architecture we are building toward,
 > not only current on-disk code. `src/modules/url-shortener/**` is the module
@@ -152,7 +152,7 @@ src/
 | `Result<T, E>` (ADR 0002)      | Use cases not yet in module form; `src/lib/api.ts` still throws `ApiError`                                   |
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
 | Tests                          | Kernel suite exists (`npm test` = `node --test` on `src/lib`); no DOM/React tests yet, no coverage floors    |
-| Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); dual-mode frontend ready (Epic 9); blocked on Java HttpOnly cookies |
+| Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); Java HttpOnly cookies are delivered (service ADR 0010); remaining blocker is UAT probe, not missing endpoints. Test coverage map in `docs/testing.md` |
 | Release SBOM                  | Release workflow uploads `dist/` only; CycloneDX SBOM not generated (timeboxed out of Epic 6)               |
 
 ## Backend parity
