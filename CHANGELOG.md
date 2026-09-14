@@ -10,6 +10,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **Integration tests (Epic 10)** — Vitest + jsdom + Testing Library + MSW
+  suite on `src/**/*.spec.tsx` (`npm run test:integration`), wired into CI after
+  `npm test`. Specs: LoginPage (401 mapped copy + request id, 200 hydrates),
+  HomePage (invalid URL never hits MSW, 201 shortUrl + copy, 429 Retry-After),
+  LinksPage (empty state, list + Mais), LinkDetailPage (PATCH only filled
+  fields, archive Dialog), cookie-mode AuthProvider (/me 200 hydrates without
+  Authorization/cookie leakage, /me 401 → refresh 401 → cleared → /login).
+  MSW handlers speak the real contract (`token`, `refreshToken`, `userId`,
+  `email`, `name`, `items`, `nextCursor`, `hasMore`, `shortUrl`, `originalUrl`,
+  `clickCount`); kernel `node --test` stays the default `npm test`.
+
 - **Cookie-mode refresh loop (hotfix)** — `401` on any non-auth endpoint now
   triggers the single-flight refresh in cookie mode (`cookieMode ||
   Boolean(getRefreshToken())`), so the `refresh_token` cookie is sent instead of

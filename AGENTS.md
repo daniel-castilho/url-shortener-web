@@ -151,7 +151,7 @@ src/
 | `src/modules/url-shortener/**` | Not yet extracted — current UI lives in `src/pages/*` + `src/lib/api.ts`; hexagon is target state (ADR 0001) |
 | `Result<T, E>` (ADR 0002)      | Use cases not yet in module form; `src/lib/api.ts` still throws `ApiError`                                   |
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
-| Tests                          | Kernel suite exists (`npm test` = `node --test` on `src/lib`); no DOM/React tests yet, no coverage floors    |
+| Tests                          | Kernel suite (`npm test` = `node --test` on `src/lib`) + integration suite (`npm run test:integration` = Vitest + jsdom + RTL + MSW on `src/**/*.spec.tsx`, no browsers); no coverage floors. Map in `docs/testing.md` |
 | Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); Java HttpOnly cookies are delivered (service ADR 0010); remaining blocker is UAT probe, not missing endpoints. Test coverage map in `docs/testing.md` |
 | Release SBOM                  | Release workflow uploads `dist/` only; CycloneDX SBOM not generated (timeboxed out of Epic 6)               |
 
