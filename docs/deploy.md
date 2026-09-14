@@ -107,3 +107,26 @@ The Java API sets its own CSP on `/api*` and `/{id}` responses. The edge does **
 ### Reserved paths must match App.tsx
 
 Both edge configs exclude `/login`, `/register`, `/links` from the short-code regex. These MUST stay in sync with `src/App.tsx` single-segment routes (`/login`, `/register`, `/links`). If a new single-segment route is added to the SPA, it MUST be added to the exclusion list (`not path ...` in Caddy; exact/prefix locations in NGINX) or the SPA route will be proxied to Java as a short code. Multi-segment routes (e.g. `/links/:id`) cannot match the single-segment regex and need no exclusion.
+
+## Release artifacts
+
+A pushed tag `vX.Y.Z` triggers `.github/workflows/release.yml`, which runs the
+full gate (`npm test` → `npm run test:integration` → `npm run build`), then
+produces and publishes three files (artifact `release-<tag>`, 30-day retention,
+plus a GitHub Release):
+
+| File | Content |
+| --- | --- |
+| `url-shortener-web-<tag>.tar.gz` | The built `dist/` archive. |
+| `sbom-url-shortener-web-<tag>.json` | CycloneDX 1.5 SBOM of the production dependency tree (Node 24-native `npm sbom --sbom-format cyclonedx --omit dev --package-lock-only`). |
+| `SHA256SUMS` | SHA-256 digests of the archive and the SBOM. |
+
+Mirrors the backend release discipline
+(`url-shortener-service/docs/release-runbook.md`). To verify downloaded assets:
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
+The workflow itself runs this check before uploading, so a published set is
+always internally consistent.

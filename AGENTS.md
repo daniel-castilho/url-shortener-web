@@ -112,6 +112,11 @@ simplified for the SPA:
   the tag commit — its content is promoted into a `## [X.Y.Z] - YYYY-MM-DD`
   section in the same commit.
 - **`npm run check` is green** at the tagged commit.
+- **Release assets:** the tag workflow publishes `url-shortener-web-<tag>.tar.gz`
+  (dist archive), `sbom-url-shortener-web-<tag>.json` (CycloneDX SBOM of the
+  production dependency tree, via native `npm sbom`) and `SHA256SUMS` (verified
+  with `sha256sum -c` inside the job) to the `release-<tag>` artifact **and**
+  a GitHub Release. Recipe in `docs/deploy.md` → *Release artifacts*.
 - Pushing a tag: `git push origin vX.Y.Z` (after the release commit is pushed).
 
 Every release commit also updates `CHANGELOG.md` (Keep a Changelog) and, if the
@@ -153,7 +158,7 @@ src/
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
 | Tests                          | Kernel suite (`npm test` = `node --test` on `src/lib`) + integration suite (`npm run test:integration` = Vitest + jsdom + RTL + MSW on `src/**/*.spec.tsx`, no browsers); no coverage floors. Map in `docs/testing.md` |
 | Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); Java HttpOnly cookies are delivered (service ADR 0010); remaining blocker is UAT probe, not missing endpoints. Test coverage map in `docs/testing.md` |
-| Release SBOM                  | Release workflow uploads `dist/` only; CycloneDX SBOM not generated (timeboxed out of Epic 6)               |
+| Release SBOM                  | RESOLVED (Epic 12): tag workflow ships dist archive + CycloneDX SBOM + SHA256SUMS to artifact and GitHub Release; see *Releases & tagging* |
 
 ## Backend parity
 
