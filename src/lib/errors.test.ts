@@ -6,6 +6,7 @@ test("mapApiError maps known statuses to PT-BR copy", () => {
   assert.equal(mapApiError(400), "Dados inválidos.");
   assert.equal(mapApiError(401), "Sessão expirada.");
   assert.equal(mapApiError(403), "Você não é o dono deste link.");
+  assert.equal(mapApiError(404), "Link nao encontrado.");
   assert.equal(mapApiError(409), "Este alias já existe.");
   assert.equal(mapApiError(429), "Muitas tentativas. Espere um pouco.");
 });

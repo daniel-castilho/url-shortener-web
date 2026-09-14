@@ -6,6 +6,8 @@ export function mapApiError(status: number, retryAfterSec?: number): string {
       return "Sess\u00e3o expirada.";
     case 403:
       return "Voc\u00ea n\u00e3o \u00e9 o dono deste link.";
+    case 404:
+      return "Link nao encontrado.";
     case 409:
       return "Este alias j\u00e1 existe.";
     case 429:
