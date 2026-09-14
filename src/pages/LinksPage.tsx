@@ -17,16 +17,25 @@ export default function LinksPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Meus links</h1>
-      <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link className="underline" to={`/links/${item.id}`}>
-              {item.id}
-            </Link>
-            <span className="ml-2 text-sm text-muted-foreground">{item.originalUrl}</span>
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nenhum link ainda.{" "}
+          <Link className="underline" to="/">
+            Encurtar uma URL
+          </Link>
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Link className="underline" to={`/links/${item.id}`}>
+                {item.id}
+              </Link>
+              <span className="ml-2 text-sm text-muted-foreground">{item.originalUrl}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {q.hasNextPage && (
         <Button
           type="button"
