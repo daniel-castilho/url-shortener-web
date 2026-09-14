@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { api } from "@/lib/api";
 
@@ -22,20 +24,26 @@ export default function LoginPage() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <h1 className="text-2xl font-semibold">Entrar</h1>
-      <input
-        className="w-full rounded-md border border-input px-3 py-2"
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="w-full rounded-md border border-input px-3 py-2"
-        type="password"
-        required
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Senha</Label>
+        <Input
+          id="password"
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
       <Button type="submit">Login</Button>
       {error !== null && <ApiErrorMessage error={error} />}
     </form>

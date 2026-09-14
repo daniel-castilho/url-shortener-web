@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { api } from "@/lib/api";
 import { buildPatch } from "@/lib/link-edit";
@@ -101,57 +103,76 @@ export default function LinkDetailPage() {
       {editOpen && (
         <form onSubmit={onEditSubmit} className="mt-4 space-y-3">
           <h2 className="text-lg font-semibold">Editar</h2>
-          <input
-            className="w-full rounded-md border border-input px-3 py-2"
-            placeholder="título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <input
-            className="w-full rounded-md border border-input px-3 py-2"
-            placeholder="tags (separadas por vírgula)"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-          />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="utm source"
-              value={utmSource}
-              onChange={(e) => setUtmSource(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="utm medium"
-              value={utmMedium}
-              onChange={(e) => setUtmMedium(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="utm campaign"
-              value={utmCampaign}
-              onChange={(e) => setUtmCampaign(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="utm term"
-              value={utmTerm}
-              onChange={(e) => setUtmTerm(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="utm content"
-              value={utmContent}
-              onChange={(e) => setUtmContent(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-input px-3 py-2"
-              placeholder="expira em (date-time)"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Título</Label>
+            <Input
+              id="edit-title"
+              placeholder="título"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="edit-tags">Tags (separadas por vírgula)</Label>
+            <Input
+              id="edit-tags"
+              placeholder="promo, site_1"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-utm-source">UTM source</Label>
+              <Input
+                id="edit-utm-source"
+                value={utmSource}
+                onChange={(e) => setUtmSource(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-utm-medium">UTM medium</Label>
+              <Input
+                id="edit-utm-medium"
+                value={utmMedium}
+                onChange={(e) => setUtmMedium(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-utm-campaign">UTM campaign</Label>
+              <Input
+                id="edit-utm-campaign"
+                value={utmCampaign}
+                onChange={(e) => setUtmCampaign(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-utm-term">UTM term</Label>
+              <Input
+                id="edit-utm-term"
+                value={utmTerm}
+                onChange={(e) => setUtmTerm(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-utm-content">UTM content</Label>
+              <Input
+                id="edit-utm-content"
+                value={utmContent}
+                onChange={(e) => setUtmContent(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-expires-at">Expira em (date-time)</Label>
+              <Input
+                id="edit-expires-at"
+                placeholder="2026-12-31T23:59:59Z"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={update.isPending}>
               Salvar
             </Button>
