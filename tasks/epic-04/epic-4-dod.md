@@ -82,13 +82,19 @@ dist/assets/index-DVIXJLQp.js   345.29 kB │ gzip: 108.14 kB
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+STATUS  CONCLUSION  TITLE                                       WORKFLOW  BRANCH              EVENT         ID           ELAPSED  CREATED AT
+✓       completed   Epic 4: Links library — ... (PR #3)         CI        epic-4-links-library pull_request  34803859570  18s      2026-09-14T03:50:15Z
+```
+
+Run/sha pair (PR head): run `34803859570` → head `65f59d119cc99adca0918d77907e6fee1f21fdb3`
+(git rev-parse HEAD), conclusion `success` — CI ran `npm ci` + `npm test` +
+`npm run build` green on the PR head.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (29d7b02 contains Epic 3)
 - [ ] Owner sanctions quoted
