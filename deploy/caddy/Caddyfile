@@ -7,6 +7,8 @@
 
 {$SITE_ADDRESS}
 
+@tls protocol https
+
 # --- Rule 1-2: API prefixes -> Java -------------------------------
 handle /api* {
 	reverse_proxy {$JAVA_UPSTREAM}
@@ -18,6 +20,9 @@ handle /actuator* {
 # --- Rule 3: short codes -> Java (302 redirect; never index.html) --
 # Single segment of the short-code alphabet [A-Za-z0-9_-]{1,64},
 # excluding reserved single-segment SPA/API paths.
+# Reserved paths MUST stay in sync with src/App.tsx single-segment routes
+# (/login, /register, /links). Multi-segment routes (/links/:id) cannot
+# match the single-segment regex, so they need no exclusion.
 @shortcode {
 	not path /login /register /links /api /actuator
 	path_regexp ^/[A-Za-z0-9_-]{1,64}$
@@ -27,6 +32,23 @@ handle @shortcode {
 }
 
 # --- Rules 4-5: SPA (static assets + index.html fallback) ----------
-root * dist
-try_files {path} /index.html
-file_server
+# Security headers apply ONLY to the SPA (index.html + assets).
+# They do NOT apply to /api*, /actuator*, or the short-code proxy handles above.
+handle {
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-DNS-Prefetch-Control "off"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+	}
+	# HSTS — only when this site terminates TLS (https:// {$SITE_ADDRESS});
+	# same values as the Java API (1y includeSubDomains preload).
+	@tls protocol https
+	header @tls Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+	root * dist
+	try_files {path} /index.html
+	file_server
+}
