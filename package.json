@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "node --test 'src/lib/*.test.ts'",
+    "e2e": "playwright test",
     "typecheck": "tsc -b --pretty",
     "check": "npm run lint && npm run typecheck && npm run build",
     "format": "prettier --write ."
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",

@@ -6,3 +6,6 @@ dist-ssr
 .DS_Store
 logs/
 *.tsbuildinfo
+test-results/
+playwright-report/
+playwright/.cache/
