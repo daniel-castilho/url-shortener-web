@@ -76,13 +76,19 @@ dist/assets/index-DtXJaEra.js   340.02 kB │ gzip: 106.96 kB
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+STATUS  CONCLUSION  TITLE                                           WORKFLOW  BRANCH                 EVENT         ID           ELAPSED  CREATED AT
+✓       completed   Epic 3: Shorten flow as a product — ... (PR #2)  CI        epic-3-shorten-product  pull_request  34802649736  18s      2026-09-14T03:27:06Z
+```
+
+Run/sha pair (PR head): run `34802649736` → head `6789626f175a408153ab233f6748f50239d1a167`
+(git rev-parse HEAD), conclusion `success` — CI ran `npm ci` + `npm test` +
+`npm run build` green on the PR head.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [x] Run/sha pair pasted or LOCAL — pending push (this file)
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (767f50a contains Epic 2)
 - [ ] Owner sanctions quoted
