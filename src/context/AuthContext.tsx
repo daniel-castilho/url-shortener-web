@@ -10,8 +10,14 @@ import {
   clearUser,
   type User,
 } from "@/lib/auth";
-import type { AuthResponse } from "@/lib/api";
-import { subscribeSession } from "@/lib/session-events";
+import type { AuthResponse, UserResponse } from "@/lib/api";
+import { subscribeSession, emitSession } from "@/lib/session-events";
+import { isCookieAuth } from "@/lib/auth-mode";
+import { api } from "@/lib/api";
+
+interface ApiErrorLike {
+  status: number;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -30,6 +36,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    const cookieMode = isCookieAuth();
+    if (cookieMode) {
+      api.me()
+        .then((me: UserResponse) => {
+          const newUser: User = { userId: me.userId, email: me.email, name: me.name };
+          setUser(newUser);
+          setUserState(newUser);
+        })
+        .catch((err) => {
+          if (err instanceof Error && "status" in err && (err as ApiErrorLike).status === 401) {
+            emitSession({ type: "cleared" });
+          } else if (err instanceof Error && "status" in err && (err as ApiErrorLike).status === 404) {
+            console.log("Java /me ausente");
+          }
+        });
+      return;
+    }
+
     const storedToken = getToken();
     const storedUser = getUser();
     if (storedToken && storedUser) {
@@ -67,6 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    const cookieMode = isCookieAuth();
+    if (cookieMode) {
+      api.logout().catch(() => {});
+    }
     clearSession();
     clearUser();
     setTokenState(null);

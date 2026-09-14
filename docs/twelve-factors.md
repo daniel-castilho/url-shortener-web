@@ -19,18 +19,28 @@ This contract is closed. The frontend does not need: HttpOnly cookies, CSRF toke
 
 ---
 
-## Decision 1 — Token Storage: `sessionStorage`
+## Decision 1 — Token Storage: Dual-mode (`sessionStorage` | HttpOnly cookies)
 
-**Choice**: Store `token`, `refreshToken`, `userId`, `email`, `name` in `sessionStorage`.
+**Choice**: Dual-mode controlled by `VITE_AUTH_MODE=bearer|cookie` (default `bearer`).
 
-**Rationale**:
+- **Bearer** (default): Store `token`, `refreshToken`, `userId`, `email`, `name` in `sessionStorage`.
+- **Cookie**: HttpOnly cookies set by the backend (`access_token` Path=/, `refresh_token` Path=/api/v1/auth/refresh). The SPA never reads or writes tokens in this mode.
+
+**Rationale (Bearer)**:
 
 - Aligns with backend's stateless JWT model (Factor 6) — tokens live in client memory/storage, not server
 - `sessionStorage` clears on tab close — matches "no session" philosophy; no persistent credential across browser restarts
 - `localStorage` would survive XSS = account takeover; `sessionStorage` limits blast radius to the tab
 - No mixed storage (some keys in session, some in local) — single source of truth
 
-**Keys**:
+**Rationale (Cookie)**:
+
+- Removes tokens from JavaScript reachable surface — XSS cannot exfiltrate tokens
+- HttpOnly cookies with `SameSite=Lax` provide CSRF protection for same-origin SPA
+- Backend issues `access_token` (Path=/) and `refresh_token` (Path=/api/v1/auth/refresh)
+- `Authorization: Bearer` remains accepted when both present (Bearer wins)
+
+**Keys (Bearer mode)**:
 
 ```
 us.token          → access token
@@ -40,7 +50,7 @@ us.email          → user email
 us.name           → user display name
 ```
 
-> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. This is acceptable for boilerplate. The next step for production exposure is a thin BFF emitting `HttpOnly; Secure; SameSite=Strict` cookies (Factor 3: config in env, not code).
+> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. Cookie mode removes this residual risk. Bearer mode remains acceptable for boilerplate; production should use Cookie mode once the backend ships HttpOnly cookies.
 
 ---
 

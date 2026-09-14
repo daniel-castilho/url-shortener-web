@@ -152,7 +152,7 @@ src/
 | `Result<T, E>` (ADR 0002)      | Use cases not yet in module form; `src/lib/api.ts` still throws `ApiError`                                   |
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
 | Tests                          | Kernel suite exists (`npm test` = `node --test` on `src/lib`); no DOM/React tests yet, no coverage floors    |
-| Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); thin BFF next step                 |
+| Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); dual-mode frontend ready (Epic 9); blocked on Java HttpOnly cookies |
 | Release SBOM                  | Release workflow uploads `dist/` only; CycloneDX SBOM not generated (timeboxed out of Epic 6)               |
 
 ## Backend parity

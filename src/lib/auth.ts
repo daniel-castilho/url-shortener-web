@@ -1,3 +1,5 @@
+import { isCookieAuth } from "./auth-mode.ts";
+
 const TOKEN = "us.token";
 const REFRESH = "us.refreshToken";
 const USER_ID = "us.userId";
@@ -11,10 +13,12 @@ export type User = {
 };
 
 export function getToken(): string | null {
+  if (isCookieAuth()) return null;
   return sessionStorage.getItem(TOKEN);
 }
 
 export function getRefreshToken(): string | null {
+  if (isCookieAuth()) return null;
   return sessionStorage.getItem(REFRESH);
 }
 
@@ -27,6 +31,7 @@ export function getUser(): User | null {
 }
 
 export function setSession(token: string, refreshToken: string): void {
+  if (isCookieAuth()) return;
   sessionStorage.setItem(TOKEN, token);
   sessionStorage.setItem(REFRESH, refreshToken);
 }

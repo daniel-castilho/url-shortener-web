@@ -10,6 +10,8 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **Hard session (Epic 9)** — dual-mode auth (`VITE_AUTH_MODE=bearer|cookie`); fetch always `credentials: "include"`; `Authorization` header only in bearer mode; refresh with empty body in cookie mode; `GET /api/v1/auth/me` rehydrate on mount; `POST /api/v1/auth/logout` call on logout; AuthProvider mount handles 200/401/404 in cookie mode; kernel tests for mode branching; `twelve-factors.md` Decision 1 updated to dual-mode.
+
 - **Quality gate (Epic 2)** — kernel test suite with `node --test`
   (`mapApiError`, `session-events`, refresh single-flight coordinator);
   `X-Request-Id` header (UUID per attempt) on every request including refresh,
