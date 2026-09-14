@@ -10,6 +10,12 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **Quality gate (Epic 2)** — kernel test suite with `node --test`
+  (`mapApiError`, `session-events`, refresh single-flight coordinator);
+  `X-Request-Id` header (UUID per attempt) on every request including refresh,
+  carried on `ApiError.requestId` and shown in error UI; `ErrorBoundary` around
+  routes with PT-BR fallback + "Tentar de novo"; `HomePage` now maps API errors
+  like the other pages; CI runs `npm test` before build.
 - **Hard-logout bridge** — failed refresh now clears React context + Query cache + navigates to `/login`; successful refresh syncs context token/user via session-events notifier
 
 ## [0.1.0] - 2026-09-13

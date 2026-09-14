@@ -1,15 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api, ApiError } from "@/lib/api";
-import { mapApiError } from "@/lib/errors";
+import { ApiErrorMessage } from "@/components/ApiErrorMessage";
+import { api } from "@/lib/api";
 
 export default function LinksPage() {
   const q = useQuery({ queryKey: ["urls"], queryFn: () => api.listUrls() });
   if (q.isPending) return <p>Carregando</p>;
-  if (q.error) {
-    const msg = q.error instanceof ApiError ? mapApiError(q.error.status) : String(q.error);
-    return <p className="text-destructive">{msg}</p>;
-  }
+  if (q.error) return <ApiErrorMessage error={q.error} />;
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Meus links</h1>

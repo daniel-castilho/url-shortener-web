@@ -85,6 +85,7 @@ relevant parts before starting any task.
 
 ```bash
 npm run check      # lint (+ boundaries) + typecheck + build  ← "done" gate
+npm test           # node --test kernel suite (src/lib)
 npm run dev        # Vite dev server
 npm run build      # tsc -b && vite build
 npm run lint       # eslint (flat config)
@@ -92,9 +93,10 @@ npm run typecheck  # tsc --noEmit
 npm run format     # prettier --write .
 ```
 
-Tests (node built-in runner, planned): `node --test` with
-`--experimental-strip-types`. Domain/application tests never touch `fetch`,
-React, or the DOM.
+Tests: `npm test` runs `node --test` on `src/lib/*.test.ts` (TS via native
+strip-types on Node 24, no flags needed). Domain/application tests never touch
+`fetch`, React, or the DOM. New pure helpers ship with a test file in the same
+PR. CI runs `npm ci` + `npm test` + `npm run build`.
 
 ---
 
@@ -149,7 +151,7 @@ src/
 | `src/modules/url-shortener/**` | Not yet extracted — current UI lives in `src/pages/*` + `src/lib/api.ts`; hexagon is target state (ADR 0001) |
 | `Result<T, E>` (ADR 0002)      | Use cases not yet in module form; `src/lib/api.ts` still throws `ApiError`                                   |
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
-| Tests                          | No test suite yet — node built-in runner planned (`npm run check` covers lint+typecheck+build only)          |
+| Tests                          | Kernel suite exists (`npm test` = `node --test` on `src/lib`); no DOM/React tests yet, no coverage floors    |
 | Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); thin BFF next step                 |
 
 ## Backend parity

@@ -1,6 +1,7 @@
 import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
 import { mapApiError } from "./errors";
 import { emitSession } from "./session-events";
+import { createRefreshCoordinator } from "./refresh-coordinator";
 
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -8,19 +9,22 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public requestId?: string,
   ) {
     super(message);
   }
 }
 
-let refreshingPromise: Promise<boolean> | null = null;
+function newRequestId(): string {
+  return crypto.randomUUID();
+}
 
-async function refreshTokens(): Promise<boolean> {
+const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> => {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
   const res = await fetch(`${base}/api/v1/auth/refresh`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", "X-Request-Id": newRequestId() },
     body: JSON.stringify({ refreshToken }),
   });
   if (!res.ok) return false;
@@ -29,11 +33,13 @@ async function refreshTokens(): Promise<boolean> {
   setUser({ userId: data.userId, email: data.email, name: data.name });
   emitSession({ type: "refreshed" });
   return true;
-}
+});
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const requestId = newRequestId();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
+  headers.set("X-Request-Id", requestId);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -45,19 +51,14 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       path === "/api/v1/auth/register" ||
       path === "/api/v1/auth/refresh";
     if (!isAuthEndpoint) {
-      if (!refreshingPromise) {
-        refreshingPromise = refreshTokens().finally(() => {
-          refreshingPromise = null;
-        });
-      }
-      const ok = await refreshingPromise;
+      const ok = await refreshCoordinator.refresh();
       if (ok) return request<T>(path, init, false);
       clearSession();
       clearUser();
       emitSession({ type: "cleared" });
     }
   }
-  if (!res.ok) throw new ApiError(res.status, await res.text());
+  if (!res.ok) throw new ApiError(res.status, await res.text(), requestId);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }

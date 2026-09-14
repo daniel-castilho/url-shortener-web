@@ -1,5 +1,6 @@
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -66,7 +67,9 @@ export default function App() {
     <AuthProvider>
       <div className="mx-auto min-h-svh w-full max-w-2xl px-4 py-8">
         <Nav />
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </div>
     </AuthProvider>
   );

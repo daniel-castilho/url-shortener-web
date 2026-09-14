@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { api } from "@/lib/api";
 
 export default function LinkDetailPage() {
@@ -12,7 +13,8 @@ export default function LinkDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["url", id] }),
   });
   if (q.isPending) return <p>Carregando</p>;
-  if (q.error || !q.data) return <p>Link nao encontrado.</p>;
+  if (q.error) return <ApiErrorMessage error={q.error} />;
+  if (!q.data) return <p>Link nao encontrado.</p>;
   const link = q.data;
   return (
     <div className="space-y-3">

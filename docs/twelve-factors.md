@@ -50,7 +50,7 @@ us.name           → user display name
 
 1. Request receives `401`
 2. **One** refresh attempt shared across all concurrent 401s (mutex / "single flight")
-3. Refresh succeeds → update tokens in storage → retry original request **once** → emit `refreshed` event to sync in-memory context
+3. Refresh succeeds → update tokens in storage → retry original request **once** (fresh `X-Request-Id` per attempt) → emit `refreshed` event to sync in-memory context
 4. Refresh fails (401/400/network/no new token) → **hard logout**:
    - Clear all `us.*` keys from `sessionStorage`
    - Emit `cleared` event → `AuthProvider` clears in-memory `user`/`token`, invalidates React Query cache, navigates to `/login` (SPA transition, no full reload; no-op if already on `/login`)

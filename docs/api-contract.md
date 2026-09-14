@@ -194,3 +194,8 @@ The client requests below consume the exact fields above — no renamed aliases:
 
 Token refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }`, single-flight
 on 401; hard logout clears `sessionStorage` and React Query when refresh fails.
+
+Client-only addition (backend echoes, no contract change): every request,
+including the refresh call, sends an `X-Request-Id` header (UUID generated per
+attempt — a retry after 401/refresh gets a fresh id). The id is carried on
+`ApiError.requestId` and displayed in the error UI for support triage.
