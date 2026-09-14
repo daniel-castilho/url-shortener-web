@@ -1,5 +1,6 @@
 import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
 import { mapApiError } from "./errors";
+import { emitSession } from "./session-events";
 
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -26,6 +27,7 @@ async function refreshTokens(): Promise<boolean> {
   const data = (await res.json()) as AuthResponse;
   setSession(data.token, data.refreshToken);
   setUser({ userId: data.userId, email: data.email, name: data.name });
+  emitSession({ type: "refreshed" });
   return true;
 }
 
@@ -52,6 +54,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       if (ok) return request<T>(path, init, false);
       clearSession();
       clearUser();
+      emitSession({ type: "cleared" });
     }
   }
   if (!res.ok) throw new ApiError(res.status, await res.text());

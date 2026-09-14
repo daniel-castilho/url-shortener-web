@@ -8,6 +8,10 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Added
+
+- **Hard-logout bridge** — failed refresh now clears React context + Query cache + navigates to `/login`; successful refresh syncs context token/user via session-events notifier
+
 ## [0.1.0] - 2026-09-13
 
 ### Added

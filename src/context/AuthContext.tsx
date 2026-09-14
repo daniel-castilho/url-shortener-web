@@ -11,6 +11,7 @@ import {
   type User,
 } from "@/lib/auth";
 import type { AuthResponse } from "@/lib/api";
+import { subscribeSession } from "@/lib/session-events";
 
 interface AuthContextValue {
   user: User | null;
@@ -39,6 +40,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearUser();
     }
   }, []);
+
+  useEffect(() => {
+    const handleSessionEvent = (e: { type: "cleared" | "refreshed" }) => {
+      if (e.type === "cleared") {
+        setTokenState(null);
+        setUserState(null);
+        queryClient.clear();
+        if (window.location.pathname !== "/login") navigate("/login");
+      } else {
+        setTokenState(getToken());
+        setUserState(getUser());
+      }
+    };
+    const unsub = subscribeSession(handleSessionEvent);
+    return unsub;
+  }, [navigate, queryClient]);
 
   const login = (auth: AuthResponse) => {
     setSession(auth.token, auth.refreshToken);

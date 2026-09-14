@@ -50,11 +50,10 @@ us.name           → user display name
 
 1. Request receives `401`
 2. **One** refresh attempt shared across all concurrent 401s (mutex / "single flight")
-3. Refresh succeeds → update tokens in storage → retry original request **once**
+3. Refresh succeeds → update tokens in storage → retry original request **once** → emit `refreshed` event to sync in-memory context
 4. Refresh fails (401/400/network/no new token) → **hard logout**:
    - Clear all `us.*` keys from `sessionStorage`
-   - Invalidate React Query cache
-   - Navigate to `/login` (SPA transition, no full reload)
+   - Emit `cleared` event → `AuthProvider` clears in-memory `user`/`token`, invalidates React Query cache, navigates to `/login` (SPA transition, no full reload; no-op if already on `/login`)
 5. No proactive refresh timer — access TTL (24h) makes reactive-on-401 correct
 6. Skip refresh for: `/login`, `/register`, `/refresh` endpoints
 
@@ -63,6 +62,8 @@ us.name           → user display name
 - Backend refresh endpoint returns new `access` (+ optionally new `refreshToken`); no documented rotation requirement
 - Access TTL is 24h — proactive renewal adds complexity without benefit
 - Single-flight prevents refresh token burnout under concurrent 401s
+
+**Event bus**: `src/lib/session-events.ts` — tiny pub/sub (no React deps). `api.ts` emits; `AuthProvider` subscribes on mount, unsubscribes on unmount.
 
 ---
 
