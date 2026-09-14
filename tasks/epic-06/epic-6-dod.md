@@ -111,13 +111,19 @@ installed locally; `which caddy` / `which nginx` empty). Probe matrix from
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+STATUS  CONCLUSION  TITLE                                          WORKFLOW  BRANCH           EVENT         ID           ELAPSED  CREATED AT
+✓       completed   Epic 6: Production at the edge — ... (PR #5)    CI        epic-6-edge-deploy pull_request  34843085550  19s      2026-09-14T08:23:47Z
+```
+
+Run/sha pair (PR head): run `34843085550` → head `f3407a078713082c5afa0cce34999e604d91c9bc`
+(git rev-parse HEAD), conclusion `success` — CI ran `npm ci` + `npm test` +
+`npm run build` green on the PR head.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (d8f4670 contains Epic 5)
 - [ ] Owner sanctions quoted
