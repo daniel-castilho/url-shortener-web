@@ -81,3 +81,29 @@ caddy run --config deploy/caddy/Caddyfile   # needs dist/ in the Caddyfile root
 
 `vite preview` does not proxy `/api` — use it for SPA-only checks; use the
 Caddy config (or the UAT kit) when you need the routing law locally.
+
+## Security headers
+
+The SPA document (`index.html` and all static assets) is served with the
+following browser security headers. They mirror the Java API's `SecurityConfig`
+(`url-shortener-service/src/main/java/.../SecurityConfig.java`) and add
+SPA-specific hardening (`Permissions-Policy`, `X-DNS-Prefetch-Control`,
+`frame-ancestors`, `base-uri`, `form-action`).
+
+| Header | Value | Notes |
+| --- | --- | --- |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME sniffing (Java: `contentTypeOptions`). |
+| `X-Frame-Options` | `DENY` | Prevents framing (Java: `frameOptions.deny()`). |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Java default. |
+| `X-DNS-Prefetch-Control` | `off` | SPA hardening (not sent by Java). |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Locks down powerful features (not sent by Java). |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'` | Mirrors Java CSP plus `frame-ancestors 'none'` (matches `X-Frame-Options`), `base-uri`, `form-action`. `style-src 'unsafe-inline'` is retained for Java parity and as a safety net for inline style attributes written by React components (e.g. `ClicksChart` bar widths); the production build ships only hashed `/assets/*` CSS/JS, so `style-src 'self'` covers the build — tightening to `'self'` is tracked as future debt. `X-XSS-Protection` is omitted (deprecated, ignored by modern browsers; Java sends `1; mode=block` but it has no effect). |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | **Only on TLS-terminated blocks** (1y, includeSubDomains, preload — matches the Java API). In Caddy: gated by `@tls protocol https` matcher inside the SPA handle. In NGINX: the snippet owns no TLS listener; the value is provided as a commented template — uncomment in the TLS server block that includes this snippet, or set at the LB that terminates TLS. |
+
+### Why CSP only on the SPA
+
+The Java API sets its own CSP on `/api*` and `/{id}` responses. The edge does **not** inject CSP on the short-code proxy location (`handle @shortcode` / `location ~ regex`) — those responses must remain pure Java 302/404/410/429 with the API's own headers. Double CSP would be redundant and could conflict.
+
+### Reserved paths must match App.tsx
+
+Both edge configs exclude `/login`, `/register`, `/links` from the short-code regex. These MUST stay in sync with `src/App.tsx` single-segment routes (`/login`, `/register`, `/links`). If a new single-segment route is added to the SPA, it MUST be added to the exclusion list (`not path ...` in Caddy; exact/prefix locations in NGINX) or the SPA route will be proxied to Java as a short code. Multi-segment routes (e.g. `/links/:id`) cannot match the single-segment regex and need no exclusion.
