@@ -1,0 +1,32 @@
+# UAT edge — serves the SPA (dist/) and proxies the Java API.
+# Implements docs/deploy.md routing law.
+#
+# Usage:
+#   SITE_ADDRESS=uat.tyny.ca JAVA_UPSTREAM=localhost:8080 caddy run --config deploy/caddy/Caddyfile
+# Build first: npm run build (this file serves ./dist relative to repo root).
+
+{$SITE_ADDRESS}
+
+# --- Rule 1-2: API prefixes -> Java -------------------------------
+handle /api* {
+	reverse_proxy {$JAVA_UPSTREAM}
+}
+handle /actuator* {
+	reverse_proxy {$JAVA_UPSTREAM}
+}
+
+# --- Rule 3: short codes -> Java (302 redirect; never index.html) --
+# Single segment of the short-code alphabet [A-Za-z0-9_-]{1,64},
+# excluding reserved single-segment SPA/API paths.
+@shortcode {
+	not path /login /register /links /api /actuator
+	path_regexp ^/[A-Za-z0-9_-]{1,64}$
+}
+handle @shortcode {
+	reverse_proxy {$JAVA_UPSTREAM}
+}
+
+# --- Rules 4-5: SPA (static assets + index.html fallback) ----------
+root * dist
+try_files {path} /index.html
+file_server
