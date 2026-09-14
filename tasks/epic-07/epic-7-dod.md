@@ -108,13 +108,26 @@ present in DTO but dimensions undocumented — not rendered (no invented UI).
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+completed	success	feat(analytics): Epic 7 — Analytics panel (formatClickCount, series chart, lazy chunk)	CI	epic-7-analytics-panel	pull_request	34855947695	20s	2026-09-14T14:29:31Z
+completed	success	Merge pull request #5 from daniel-castilho/epic-6-edge-deploy	CI	main	push	34843357485	17s	2026-09-14T12:25:37Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843268126	24s	2026-09-14T12:24:42Z
+completed	success	Epic 6: Production at the edge — Caddy UAT, NGINX Blue/Green, release artifact	CI	epic-6-edge-deploy	pull_request	34843085550	18s	2026-09-14T12:22:41Z
+completed	success	Merge pull request #4 from daniel-castilho/epic-5-shell-design-system	CI	main	push	34807386448	22s	2026-09-14T04:48:33Z
+completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807328396	19s	2026-09-14T04:47:30Z
+completed	success	Epic 5: Shell & design system — Tyny URL header, shadcn primitives	CI	epic-5-shell-design-system	pull_request	34807177839	22s	2026-09-14T04:44:57Z
+completed	success	Merge pull request #3 from daniel-castilho/epic-4-links-library	CI	main	push	34804011372	20s	2026-09-14T03:51:29Z
+completed	success	Epic 4: Links library — cursor list, detail, PATCH, archive	CI	epic-4-links-library	pull_request	34803969846	16s	2026-09-14T03:50:43Z
+completed	success	Epic 4: Links library — cursor list, detail, PATCH, archive	CI	epic-4-links-library	pull_request	34803859570	17s	2026-09-14T03:48:42Z
+```
+
+Run/sha pair: `34855947695` @ head `d8e873b5f07c7837ec414595a7b6d7954e092445`
+(`d8e873b`) — CI `success` on this PR's head.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (da27c01 contains Epic 6)
 - [ ] Owner sanctions quoted
