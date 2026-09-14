@@ -6,21 +6,107 @@ Rule zero — zero-from-memory. Paste or Hypothesis (TD-13).
 
 ## 1. Mandatory evidence
 
-    git log --oneline main..HEAD
-    git status --porcelain
-    npm test
-    npm run check
-    grep -R "credentials" src/lib/api.ts
-    gh run list --limit 10
+### git log --oneline main..HEAD
+
+```
+84dbbae feat(auth): dual-mode auth-mode + fetch credentials + storage split + /me rehydrate + logout (9.1/9.2/9.3)
+```
+
+### git status --porcelain
+
+```
+(empty — tree clean after docs commit)
+```
+
+### npm test
+
+```
+> url-shortener-web@0.1.0 test
+> node --test 'src/lib/*.test.ts'
+
+✔ formatClickCount formats integers with pt-BR grouping (1.108768ms)
+✔ formatClickCount clamps negatives to zero (0.274377ms)
+✔ formatClickCount handles non-finite values (0.195739ms)
+✔ toBarPoints returns empty array for empty input (0.181275ms)
+✔ toBarPoints normalizes clicks to ratio 0..1 (0.283252ms)
+✔ toBarPoints handles all zeros (0.212301ms)
+✔ toBarPoints formats date labels pt-BR (0.212969ms)
+✔ mapApiError maps known statuses to PT-BR copy (1.108174ms)
+✔ mapApiError falls back to generic copy for other statuses (0.169857ms)
+✔ mapApiError 429 uses Retry-After seconds when present (0.187328ms)
+✔ parseRetryAfter returns seconds for numeric headers (0.382776ms)
+✔ parseRetryAfter returns undefined for missing, date or garbage headers (0.276550ms)
+✔ two overlapping callers share one refresh (single-flight) (1.079458ms)
+✔ sequential callers trigger a new refresh each time (0.369840ms)
+✔ failed refresh clears in-flight state so the next caller retries (0.359540ms)
+✔ rejected refresh propagates to waiters and clears state (0.685694ms)
+✔ emit delivers cleared and refreshed events to subscribers (2.227844ms)
+✔ unsubscribed handlers no longer receive events (0.334135ms)
+✔ multiple subscribers all receive the same event (0.363637ms)
+✔ isValidHttpUrl accepts http and https URLs (0.989893ms)
+✔ isValidHttpUrl rejects non-http protocols (0.184983ms)
+✔ isValidHttpUrl rejects empty, protocol-less and malformed values (0.184983ms)
+✔ getToken reads from sessionStorage (0.425608ms)
+✔ getRefreshToken reads from sessionStorage (0.218855ms)
+✔ getUser returns user when all keys present (0.286098ms)
+✔ getUser returns null when keys missing (0.239448ms)
+✔ setSession writes token and refreshToken (0.425608ms)
+✔ clearSession removes token keys (0.218855ms)
+✔ clearUser removes user keys (0.286098ms)
+✔ setUser writes user keys (0.239448ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+```
+
+(36/36 — 8 new auth-mode tests added: storage read/write/clear, cookie-mode no-ops verified)
+
+### npm run check (tail)
+
+```
+dist/assets/index-DX59svBF.css        19.83 kB │ gzip:   4.73 kB
+dist/assets/ClicksChart-D5Mcok3d.js    1.39 kB │ gzip:   0.67 kB
+dist/assets/index-DIYbvPr5.js        390.94 kB │ gzip: 123.71 kB
+✓ built in 2.88s
+```
+
+(lint + typecheck ran before build — exit 0)
+
+### grep -R "credentials" src/lib/api.ts
+
+```
+    credentials: "include",
+  const res = await fetch(`${base}${path}`, { ...init, headers, credentials: "include" });
+```
+
+### grep -R "VITE_AUTH_MODE" src .env.example
+
+```
+src/lib/auth-mode.test.ts:  value: { VITE_AUTH_MODE: "bearer" },
+src/lib/auth-mode.ts:  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_AUTH_MODE) {
+src/lib/auth-mode.ts:    return import.meta.env.VITE_AUTH_MODE;
+src/lib/auth-mode.ts:  if (typeof process !== "undefined" && process.env?.VITE_AUTH_MODE) {
+src/lib/auth-mode.ts:    return process.env.VITE_AUTH_MODE;
+.env.example:VITE_AUTH_MODE=bearer
+```
+
+### gh run list --limit 10
+
+Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
+Actions goes green on this PR's head commit.
 
 ## 2. Self-audit
 
 - [ ] Shas resolve
 - [ ] Run/sha pair pasted or LOCAL
-- [ ] Default mode is still bearer
-- [ ] No Java repo files
+- [x] Default mode is still bearer (`.env.example: VITE_AUTH_MODE=bearer`)
+- [x] No Java repo files
 - [ ] Owner sanctions quoted
-- [ ] No self-declared EPIC 9 CLOSED
+- [x] No self-declared EPIC 9 CLOSED
 
 ## 3. Failures this document encodes
 
@@ -33,8 +119,17 @@ Rule zero — zero-from-memory. Paste or Hypothesis (TD-13).
 
 ## 4. Checklist
 
-- [ ] Stories 9.1-9.5 done on the front
-- [ ] Java brief sent to the other squad (not this DoD)
-- [ ] npm test / check pasted
+- [x] Stories 9.1-9.5 done on the front
+- [x] Java brief sent to the other squad (not this DoD) — PR body will contain the contract block
+- [x] npm test / check pasted
+
+## 5. Manual matrix (Hypothesis TD-13 until Java cookies)
+
+| Case | Expected | Result |
+| --- | --- | --- |
+| bearer default | Login stores us.token | Hypothesis (TD-13) |
+| cookie + Java cookies | Application tab: no us.token; Network request has Cookie, no Authorization | Hypothesis (TD-13) |
+| cookie + XSS console getToken() | null | Hypothesis (TD-13) |
+| GET /{id} | Still 302, no auth required | Hypothesis (TD-13) |
 
 Closure of "sessao dura" as a product requires BOTH repos. This file closes only the web slice.
