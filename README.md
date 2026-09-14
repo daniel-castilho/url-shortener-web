@@ -156,6 +156,35 @@ Tagging `vX.Y.Z` triggers [`.github/workflows/release.yml`](.github/workflows/re
 | **Done gate** (lint + type + build)    | `npm run check`                    |
 | Format                                 | `npm run format`                   |
 | Add a shadcn component                 | `npx shadcn@latest add card input` |
+| E2E (Playwright, opt-in)              | `npm run e2e`                       |
+
+## E2E testing (Epic 8)
+
+Playwright covers the happy path end to end
+([`e2e/happy-path.spec.ts`](e2e/happy-path.spec.ts)): authenticate (register
+with generated credentials, or login when `E2E_EMAIL`/`E2E_PASSWORD` are
+set), shorten, list, open detail, archive via Dialog confirm.
+
+**Local** (needs Java up on `:8080`, per *Requirements* above):
+
+```sh
+npm run e2e
+```
+
+The config (`playwright.config.ts`) builds the app and serves `dist/` with
+`vite preview`, which proxies `/api` and `/actuator` to Java like the dev
+server. It reuses an already-running preview server when not in CI. Point the
+tests at a deployed stack instead:
+
+```sh
+PLAYWRIGHT_BASE_URL=https://uat.tyny.ca E2E_EMAIL=... E2E_PASSWORD=... npm run e2e
+```
+
+**CI**: the default PR workflow keeps `npm test` + `npm run build` and does
+not start Chromium. The `e2e` job only runs when the repo variable
+`E2E_ENABLED=true` or on `workflow_dispatch`, so a missing UAT never red-fails
+`main`. Credentials come from secrets (`E2E_EMAIL`, `E2E_PASSWORD`); nothing
+secret is committed.
 
 ## Routes
 
