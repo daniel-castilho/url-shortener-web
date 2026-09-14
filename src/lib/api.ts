@@ -1,6 +1,7 @@
 import { clearSession, clearUser, getRefreshToken, getToken, setSession, setUser } from "./auth";
 import { mapApiError } from "./errors";
 import { emitSession } from "./session-events";
+import { createRefreshCoordinator } from "./refresh-coordinator";
 
 const base = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -13,9 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-let refreshingPromise: Promise<boolean> | null = null;
-
-async function refreshTokens(): Promise<boolean> {
+const refreshCoordinator = createRefreshCoordinator(async (): Promise<boolean> => {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
   const res = await fetch(`${base}/api/v1/auth/refresh`, {
@@ -29,7 +28,7 @@ async function refreshTokens(): Promise<boolean> {
   setUser({ userId: data.userId, email: data.email, name: data.name });
   emitSession({ type: "refreshed" });
   return true;
-}
+});
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   const headers = new Headers(init.headers);
@@ -45,12 +44,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       path === "/api/v1/auth/register" ||
       path === "/api/v1/auth/refresh";
     if (!isAuthEndpoint) {
-      if (!refreshingPromise) {
-        refreshingPromise = refreshTokens().finally(() => {
-          refreshingPromise = null;
-        });
-      }
-      const ok = await refreshingPromise;
+      const ok = await refreshCoordinator.refresh();
       if (ok) return request<T>(path, init, false);
       clearSession();
       clearUser();
