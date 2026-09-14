@@ -74,6 +74,23 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **E2E trust layer (Epic 8)** — Playwright runner (`@playwright/test`
+  devDependency, `npm run e2e`), `playwright.config.ts` (testDir `e2e/`,
+  `baseURL` from `PLAYWRIGHT_BASE_URL` or the local preview server on
+  `127.0.0.1:5173`, `webServer` = `npm run build` + `vite preview` proxying
+  `/api`/`/actuator` to Java like dev); one happy-path spec
+  (`e2e/happy-path.spec.ts`) covering authenticate (register with generated
+  creds or login from env `E2E_EMAIL`/`E2E_PASSWORD`), shorten, list, detail
+  and archive via Dialog confirm — role/label selectors first, no committed
+  secrets; CI gains an opt-in `e2e` job (`if: vars.E2E_ENABLED == 'true' ||
+  workflow_dispatch`) that stays skipped by default so a missing UAT never
+  red-fails main; default PR gate remains `npm test` (node --test, no
+  Chromium).
+
+## [Unreleased]
+
+### Added
+
 - **Analytics panel (Epic 7)** — clickCount totals formatted (pt-BR) on list
   and detail; series panel on detail with CSS bar chart (no external lib,
   lazy-loaded chunk); `formatClickCount` and `toBarPoints` pure helpers
