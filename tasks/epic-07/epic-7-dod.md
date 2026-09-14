@@ -7,7 +7,7 @@ Rule zero — zero-from-memory. Paste or Hypothesis (TD-13).
 ### git log --oneline main..HEAD
 
 ```
-<docs commit sha> docs: epic-7 evidence + changelog
+35c8182 docs: epic-7 evidence + changelog
 950364c feat(analytics): ClicksChart (CSS bars) + lazy chunk + series in Detail (7.3/7.4)
 894a232 feat(analytics): ClickAnalyticsResponse types + getClicks + formatClickCount/toBarPoints (7.1/7.2)
 012f75d feat(analytics): formatClickCount + toBarPoints + tests (7.1/7.2)
