@@ -96,13 +96,19 @@ register: scrollW 375 = clientW 375, nav wraps, 3 fields full-width (343px)
 
 ### gh run list --limit 10
 
-Hypothesis (TD-13) — branch not pushed yet. Run/sha pair to be pasted after
-Actions goes green on this PR's head commit.
+```
+STATUS  CONCLUSION  TITLE                                          WORKFLOW  BRANCH                    EVENT         ID           ELAPSED  CREATED AT
+✓       completed   Epic 5: Shell & design system — ... (PR #4)     CI        epic-5-shell-design-system pull_request  34807177839  22s      2026-09-14T00:47:36Z
+```
+
+Run/sha pair (PR head): run `34807177839` → head `8276a331c40991cd1d26944b3b4c58d1b70455b5`
+(git rev-parse HEAD), conclusion `success` — CI ran `npm ci` + `npm test` +
+`npm run build` green on the PR head.
 
 ## 2. Self-audit
 
-- [ ] Shas resolve
-- [ ] Run/sha pair pasted or LOCAL
+- [x] Shas resolve
+- [x] Run/sha pair pasted or LOCAL
 - [x] Counts from npm test output
 - [x] main claims true of origin/main (53c5831 contains Epic 4)
 - [ ] Owner sanctions quoted
