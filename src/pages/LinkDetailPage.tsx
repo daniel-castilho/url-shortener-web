@@ -3,6 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
@@ -14,6 +22,7 @@ export default function LinkDetailPage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["url", id], queryFn: () => api.getUrl(id) });
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [utmSource, setUtmSource] = useState("");
@@ -104,7 +113,7 @@ export default function LinkDetailPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => archive.mutate()}
+                onClick={() => setConfirmArchive(true)}
                 disabled={!!link.deletedAt || archive.isPending}
               >
                 Arquivar
@@ -118,6 +127,30 @@ export default function LinkDetailPage() {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={confirmArchive} onOpenChange={setConfirmArchive}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Arquivar este link?</DialogTitle>
+            <DialogDescription>
+              O link {link.id} deixa de ser editável. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmArchive(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setConfirmArchive(false);
+                archive.mutate();
+              }}
+            >
+              Arquivar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {editOpen && (
         <form onSubmit={onEditSubmit} className="space-y-3">
           <h2 className="text-lg font-semibold">Editar</h2>
