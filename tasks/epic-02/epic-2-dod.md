@@ -17,6 +17,8 @@ Rule zero — zero-from-memory: every number, sha or count must be pasted from a
 ### git log --oneline main..HEAD
 
 ```
+bbb5a95 chore: ignore *.tsbuildinfo build artifacts
+e5f4e1d docs: epic-2 evidence, contract note, changelog, debt matrix
 300f230 refactor(pages): shared ApiErrorMessage component (copy + id: requestId)
 63697e8 ci: run npm test before build in check job
 3e59c64 feat(home): mapApiError + requestId on shorten errors, input type=url
@@ -115,13 +117,15 @@ src/App.tsx:        </ErrorBoundary>
 ### gh run list --limit 10
 
 ```
-STATUS  CONCLUSION  TITLE                                            WORKFLOW  BRANCH               EVENT          ID          ELAPSED  CREATED AT
-✓       completed   Epic 2: Quality gate — kernel tests, ... (PR #1)  CI        epic-2-quality-gate  pull_request   34800336126 20s      2026-09-14T02:46:35Z
+STATUS  CONCLUSION  TITLE                                           WORKFLOW  BRANCH               EVENT         ID           ELAPSED  CREATED AT
+✓       completed   Epic 2: Quality gate — kernel tests, ... (PR #1) CI        epic-2-quality-gate  pull_request  34800494248  25s      2026-09-14T02:49:31Z
+✓       completed   Epic 2: Quality gate — kernel tests, ... (PR #1) CI        epic-2-quality-gate  pull_request  34800336126  20s      2026-09-14T02:46:35Z
 ```
 
-Run/sha pair: run `34800336126` → head `eb6657a468f77c51a62c04cc206506b477ae51af`
-(git rev-parse HEAD at push time), conclusion `success` — CI ran `npm ci` +
-`npm test` + `npm run build` green on the PR head.
+Run/sha pair (final head): run `34800494248` → head `bbb5a951dfd66d303654f3d94de569da1127cee3`
+(git rev-parse HEAD), conclusion `success` — CI ran `npm ci` + `npm test` +
+`npm run build` green on the PR head. Earlier run `34800336126` covered the
+pre-squash head `eb6657a468f77c51a62c04cc206506b477ae51af` (also success).
 
 ## 2. Self-audit
 
@@ -158,6 +162,6 @@ Run/sha pair: run `34800336126` → head `eb6657a468f77c51a62c04cc206506b477ae51
 | Trigger API 400 on login | Mapped copy + request id visible | Hypothesis (TD-13) — not yet exercised against live backend |
 | Throw in a page (temporary throw) | Fallback, Tentar de novo restores | Hypothesis (TD-13) — not yet exercised |
 | Network panel on any api call | Request header X-Request-Id | Hypothesis (TD-13) — not yet exercised |
-| npm test in CI log | Suite ran, not skipped | PASS — run 34800336126, job `check` step `Test` ran `npm test` (conclusion: success) |
+| npm test in CI log | Suite ran, not skipped | PASS — run 34800494248 on head bbb5a951dfd66d303654f3d94de569da1127cee3, job `check` step `Test` ran `npm test` (conclusion: success) |
 
 Closure is the owner channel. Include this file in the Epic 2 hand-off PR.
