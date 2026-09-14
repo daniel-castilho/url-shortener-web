@@ -98,6 +98,25 @@ React, or the DOM.
 
 ---
 
+## Releases & tagging
+
+Mirrors the backend discipline (`url-shortener-service/docs/release-runbook.md`),
+simplified for the SPA:
+
+- **Version source of truth:** `package.json` `"version"`. Bump it before a
+  release; tag `vX.Y.Z` **must** match.
+- **Annotated tags only:** `git tag -a vX.Y.Z -m "release summary"`.
+- **Tag commit contract:** `## [Unreleased]` in `CHANGELOG.md` is **empty** at
+  the tag commit — its content is promoted into a `## [X.Y.Z] - YYYY-MM-DD`
+  section in the same commit.
+- **`npm run check` is green** at the tagged commit.
+- Pushing a tag: `git push origin vX.Y.Z` (after the release commit is pushed).
+
+Every release commit also updates `CHANGELOG.md` (Keep a Changelog) and, if the
+wire contract changed, `docs/api-contract.md`.
+
+---
+
 ## Architecture
 
 ```

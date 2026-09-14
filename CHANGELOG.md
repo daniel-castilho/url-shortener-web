@@ -3,10 +3,12 @@
 All notable changes to URL Shortener Web will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
-this project intends to follow [Semantic Versioning](https://semver.org/)
-starting from its first tag.
+this project intends to follow [Semantic Versioning](https://semver.org/).
+See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-13
 
 ### Added
 
