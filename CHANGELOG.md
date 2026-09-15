@@ -10,6 +10,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Fixed
 
+- **Logout without a wall-clock window** — the 5-second "ignore late `cleared`
+  events after logout" timer is gone. The transition race is now closed
+  deterministically: `Sair` sets a `pendingLogout` flag **before** clearing
+  anything, `navigate("/")` runs, and the session state + query cache are only
+  cleared once the `/` location has committed. `Private` shows "Carregando"
+  while `pendingLogout` is set instead of rendering a stale private frame or
+  issuing `<Navigate to="/login">` mid-transition. A late `cleared` from an
+  in-flight 401/refresh is harmless on a public route: `cleared` now only
+  bounces to `/login` when the current route is private (`/links*`). No
+  `setTimeout` in `src/` for logout.
+
 - **Cookie-mode auth races surfaced by the HTTPS same-origin UAT probe** — three
   frames would bounce a user to `/login` at the wrong moment:
   - Anonymous visit to a public route (`/register`, `/`) no longer redirects to
@@ -21,13 +32,12 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
     keeps the authenticated nav instead of bouncing to `/login`.
   - Logout from a private route (`/links`) lands on `/` — the router transition
     now commits before the session state goes anonymous, so `Private`'s
-    `<Navigate to="/login">` can no longer win the transition race; in-flight
-    late `cleared` events are ignored for a 5s window after an intentional
-    logout.
+    `<Navigate to="/login">` can no longer win the transition race.
   - Regression coverage added in `src/context/AuthContext.spec.tsx` for the
-    anonymous-public-route, anonymous-private-route, and logout-on-private-route
-    cases. Verified end-to-end against the Caddy edge at `https://localhost:8443`
-    (cookie mode): cold `/register` stays, register → `/links`, F5 rehydrate,
+    anonymous-public-route, anonymous-private-route, logout-on-private-route,
+    pendingLogout-cleared, and post-logout `/links` guard cases. Verified
+    end-to-end against the Caddy edge at `https://localhost:8443` (cookie
+    mode): cold `/register` stays, register → `/links`, F5 rehydrate,
     `GET /{id}` → 302, logout → home, anonymous `/links` → `/login`.
 
 ## [0.2.0] - 2026-09-15
