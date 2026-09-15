@@ -157,7 +157,7 @@ src/
 | `Result<T, E>` (ADR 0002)      | Use cases not yet in module form; `src/lib/api.ts` still throws `ApiError`                                   |
 | ESLint boundaries              | Config added; existing flat code not yet under module gates                                                  |
 | Tests                          | Kernel suite (`npm test` = `node --test` on `src/lib`) + integration suite (`npm run test:integration` = Vitest + jsdom + RTL + MSW on `src/**/*.spec.tsx`, no browsers); no coverage floors. Map in `docs/testing.md` |
-| Cookie/HttpOnly session        | `sessionStorage` is JS-readable by design (see `docs/twelve-factors.md`); Java HttpOnly cookies are delivered (service ADR 0010); remaining blocker is UAT probe, not missing endpoints. Test coverage map in `docs/testing.md` |
+| Cookie/HttpOnly session        | RESOLVED (Epic 9 UAT): Java HttpOnly cookies (`access_token`/`refresh_token`, Secure+SameSite=Lax) verified end-to-end against the HTTPS same-origin Caddy edge — anonymous first paint, `/me` cookie rehydrate on reload, short-code 302, logout revocation. `sessionStorage` remains JS-readable by design (see `docs/twelve-factors.md`); three auth races found by the probe are fixed (see CHANGELOG Unreleased). Test coverage map in `docs/testing.md` |
 | Release SBOM                  | RESOLVED (Epic 12): tag workflow ships dist archive + CycloneDX SBOM + SHA256SUMS to artifact and GitHub Release; see *Releases & tagging* |
 
 ## Backend parity
