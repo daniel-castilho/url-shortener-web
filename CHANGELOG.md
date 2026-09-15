@@ -8,17 +8,7 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
-### Fixed
-
-- **Rehydrate race on private routes** — F5 on `/links` (or `/links/:id`) bounced
-  to `/login` while the session was valid: `Private` read `isAuthenticated` on
-  first paint, before the `AuthProvider` effect rehydrated it. Bearer mode now
-  seeds `user`/`token` state synchronously from `sessionStorage`
-  (`useState` lazy initializers); cookie mode gains a `status:
-  "loading" | "ready"` flow — `Private` renders "Carregando" while `/me` is in
-  flight instead of navigating, and a `/me` `404` (endpoint missing) keeps the
-  route instead of bouncing. Regression specs added (bearer first-paint without
-  login form, cookie loading/no-bounce, `/me` 404).
+## [0.2.0] - 2026-09-15
 
 ### Added
 
@@ -58,69 +48,12 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 - **Hard session (Epic 9)** — dual-mode auth (`VITE_AUTH_MODE=bearer|cookie`); fetch always `credentials: "include"`; `Authorization` header only in bearer mode; refresh with empty body in cookie mode; `GET /api/v1/auth/me` rehydrate on mount; `POST /api/v1/auth/logout` call on logout; AuthProvider mount handles 200/401/404 in cookie mode; kernel tests for mode branching; `twelve-factors.md` Decision 1 updated to dual-mode.
 
-- **Quality gate (Epic 2)** — kernel test suite with `node --test`
-  (`mapApiError`, `session-events`, refresh single-flight coordinator);
-  `X-Request-Id` header (UUID per attempt) on every request including refresh,
-  carried on `ApiError.requestId` and shown in error UI; `ErrorBoundary` around
-  routes with PT-BR fallback + "Tentar de novo"; `HomePage` now maps API errors
-  like the other pages; CI runs `npm test` before build.
-- **Hard-logout bridge** — failed refresh now clears React context + Query cache + navigates to `/login`; successful refresh syncs context token/user via session-events notifier
-
-## [Unreleased]
-
-### Added
-
-- **Shorten flow as product (Epic 3)** — auth-gated optional fields on Home
-  (`customAlias` + `ttlSeconds` only when logged in; anonymous posts
-  `originalUrl` only), client-side URL validation before fetch
-  (`isValidHttpUrl`), `Retry-After` parsing on `429` ("Muitas tentativas.
-  Tente em Ns."), copy-to-clipboard on success with visible failure feedback,
-  and the last shortened URL stays on screen.
-
-## [Unreleased]
-
-### Added
-
-- **Links library (Epic 4)** — cursor-paginated list (`useInfiniteQuery`,
-  `Mais` button, page 1 preserved while fetching), empty state with Home link,
-  detail page with contract fields (`shortUrl`, `originalUrl`, `clickCount`,
-  `expiresAt`, `title`, `tags`, archived badge) + back link, `404` error
-  mapping, edit form sending PATCH with only filled fields (`buildPatch`,
-  tested) and invalidating list + detail, archive marks in place
-  (idempotent — disabled once archived) and invalidates both queries.
-
-## [Unreleased]
-
-### Added
-
-- **Shell & design system (Epic 5)** — shared header on every route
-  ("Tyny URL" product name + consolidated nav + user greeting + Sair);
-  shadcn primitives `Input`, `Label`, `Card`, `Dialog` (deps:
-  `@radix-ui/react-label`, `@radix-ui/react-dialog` — sanctioned); all four
-  forms migrated to `Label`+`Input` primitives; shared `EmptyState` component;
-  links list as card rows (id, originalUrl, clickCount); detail as a labeled
-  field Card; archive behind a confirmation Dialog with inline "Salvo." /
-  "Arquivado." feedback (one feedback pattern — persistent inline text, no
-  toast library); mobile-first verified at 375px (no horizontal overflow, nav
-  wraps, full-width fields).
-
-## [Unreleased]
-
-### Added
-
-- **Edge deploy (Epic 6)** — routing law documented
-  ([`docs/deploy.md`](docs/deploy.md)): API prefixes + short codes → Java,
-  SPA routes + fallback → `dist/`, short-code matcher
-  `^/[A-Za-z0-9_-]{1,64}$` with reserved-path exclusions; UAT
-  [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile) (env-driven
-  `SITE_ADDRESS`/`JAVA_UPSTREAM`); prod [`deploy/nginx/spa.conf`](deploy/nginx/spa.conf)
-  (Blue/Green root swap, exact/`^~` beats the short-code regex); README Deploy
-  section (preview/UAT/prod, `VITE_API_BASE_URL` empty same-origin); release
-  workflow on tag `v*` uploading `dist/` as an artifact.
-
-## [Unreleased]
-
-### Added
+- **Analytics panel (Epic 7)** — clickCount totals formatted (pt-BR) on list
+  and detail; series panel on detail with CSS bar chart (no external lib,
+  lazy-loaded chunk); `formatClickCount` and `toBarPoints` pure helpers
+  tested; `GET /api/v1/urls/{id}/clicks?unit=day` consumed with exact DTO
+  names (`ClickAnalyticsResponse`, `ClickSeriesPoint`); lazy-loaded chart
+  chunk (`React.lazy` + `Suspense` on detail only).
 
 - **E2E trust layer (Epic 8)** — Playwright runner (`@playwright/test`
   devDependency, `npm run e2e`), `playwright.config.ts` (testDir `e2e/`,
@@ -135,16 +68,62 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   red-fails main; default PR gate remains `npm test` (node --test, no
   Chromium).
 
-## [Unreleased]
+- **Edge deploy (Epic 6)** — routing law documented
+  ([`docs/deploy.md`](docs/deploy.md)): API prefixes + short codes → Java,
+  SPA routes + fallback → `dist/`, short-code matcher
+  `^/[A-Za-z0-9_-]{1,64}$` with reserved-path exclusions; UAT
+  [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile) (env-driven
+  `SITE_ADDRESS`/`JAVA_UPSTREAM`); prod [`deploy/nginx/spa.conf`](deploy/nginx/spa.conf)
+  (Blue/Green root swap, exact/`^~` beats the short-code regex); README Deploy
+  section (preview/UAT/prod, `VITE_API_BASE_URL` empty same-origin); release
+  workflow on tag `v*` uploading `dist/` as an artifact.
 
-### Added
+- **Shell & design system (Epic 5)** — shared header on every route
+  ("Tyny URL" product name + consolidated nav + user greeting + Sair);
+  shadcn primitives `Input`, `Label`, `Card`, `Dialog` (deps:
+  `@radix-ui/react-label`, `@radix-ui/react-dialog` — sanctioned); all four
+  forms migrated to `Label`+`Input` primitives; shared `EmptyState` component;
+  links list as card rows (id, originalUrl, clickCount); detail as a labeled
+  field Card; archive behind a confirmation Dialog with inline "Salvo." /
+  "Arquivado." feedback (one feedback pattern — persistent inline text, no
+  toast library); mobile-first verified at 375px (no horizontal overflow, nav
+  wraps, full-width fields).
 
-- **Analytics panel (Epic 7)** — clickCount totals formatted (pt-BR) on list
-  and detail; series panel on detail with CSS bar chart (no external lib,
-  lazy-loaded chunk); `formatClickCount` and `toBarPoints` pure helpers
-  tested; `GET /api/v1/urls/{id}/clicks?unit=day` consumed with exact DTO
-  names (`ClickAnalyticsResponse`, `ClickSeriesPoint`); lazy-loaded chart
-  chunk (`React.lazy` + `Suspense` on detail only).
+- **Links library (Epic 4)** — cursor-paginated list (`useInfiniteQuery`,
+  `Mais` button, page 1 preserved while fetching), empty state with Home link,
+  detail page with contract fields (`shortUrl`, `originalUrl`, `clickCount`,
+  `expiresAt`, `title`, `tags`, archived badge) + back link, `404` error
+  mapping, edit form sending PATCH with only filled fields (`buildPatch`,
+  tested) and invalidating list + detail, archive marks in place
+  (idempotent — disabled once archived) and invalidates both queries.
+
+- **Shorten flow as product (Epic 3)** — auth-gated optional fields on Home
+  (`customAlias` + `ttlSeconds` only when logged in; anonymous posts
+  `originalUrl` only), client-side URL validation before fetch
+  (`isValidHttpUrl`), `Retry-After` parsing on `429` ("Muitas tentativas.
+  Tente em Ns."), copy-to-clipboard on success with visible failure feedback,
+  and the last shortened URL stays on screen.
+
+- **Quality gate (Epic 2)** — kernel test suite with `node --test`
+  (`mapApiError`, `session-events`, refresh single-flight coordinator);
+  `X-Request-Id` header (UUID per attempt) on every request including refresh,
+  carried on `ApiError.requestId` and shown in error UI; `ErrorBoundary` around
+  routes with PT-BR fallback + "Tentar de novo"; `HomePage` now maps API errors
+  like the other pages; CI runs `npm test` before build.
+
+### Fixed
+
+- **Hard-logout bridge** — failed refresh now clears React context + Query cache + navigates to `/login`; successful refresh syncs context token/user via session-events notifier.
+
+- **Rehydrate race on private routes** — F5 on `/links` (or `/links/:id`) bounced
+  to `/login` while the session was valid: `Private` read `isAuthenticated` on
+  first paint, before the `AuthProvider` effect rehydrated it. Bearer mode now
+  seeds `user`/`token` state synchronously from `sessionStorage`
+  (`useState` lazy initializers); cookie mode gains a `status:
+  "loading" | "ready"` flow — `Private` renders "Carregando" while `/me` is in
+  flight instead of navigating, and a `/me` `404` (endpoint missing) keeps the
+  route instead of bouncing. Regression specs added (bearer first-paint without
+  login form, cookie loading/no-bounce, `/me` 404).
 
 ## [0.1.0] - 2026-09-13
 
