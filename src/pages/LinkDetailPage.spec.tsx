@@ -8,19 +8,19 @@ import { server } from "@/test/setup";
 import { makeLink } from "@/test/handlers";
 
 describe("LinkDetailPage", () => {
-  it("mostra o link e a análise de cliques", async () => {
+  it("shows the link and click analysis", async () => {
     renderWithProviders(<LinkDetailPage />, {
       initialEntries: ["/links/abc123"],
       routePath: "/links/:id",
     });
 
     expect(await screen.findByText("https://tyny.url/abc123")).toBeInTheDocument();
-    expect(screen.getByText(/id: abc123/)).toBeInTheDocument();
+    expect(screen.getByText(/ID: abc123/)).toBeInTheDocument();
     expect(screen.getByText("Test Link")).toBeInTheDocument();
-    expect(await screen.findByText("Cliques nos últimos 30 dias")).toBeInTheDocument();
+    expect(await screen.findByText("Clicks in the last 30 days")).toBeInTheDocument();
   });
 
-  it("PATCH envia apenas os campos preenchidos", async () => {
+  it("PATCH sends only filled fields", async () => {
     let patchBody: string | null = null;
     server.use(
       http.patch("/api/v1/urls/:id", async ({ request }) => {
@@ -35,17 +35,17 @@ describe("LinkDetailPage", () => {
       routePath: "/links/:id",
     });
 
-    await user.click(await screen.findByRole("button", { name: "Editar" }));
-    await user.type(screen.getByLabelText("Título"), "Novo título");
-    await user.click(screen.getByRole("button", { name: "Salvar" }));
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.type(screen.getByLabelText("Title"), "New title");
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Salvo.")).toBeInTheDocument();
+    expect(await screen.findByText("Saved.")).toBeInTheDocument();
     const sent = JSON.parse(patchBody ?? "{}") as Record<string, unknown>;
     expect(Object.keys(sent)).toEqual(["title"]);
-    expect(sent["title"]).toBe("Novo título");
+    expect(sent["title"]).toBe("New title");
   });
 
-  it("confirma o arquivamento no diálogo", async () => {
+  it("confirms archive in dialog", async () => {
     let archiveCalls = 0;
     server.use(
       http.delete("/api/v1/urls/:id", () => {
@@ -60,14 +60,14 @@ describe("LinkDetailPage", () => {
       routePath: "/links/:id",
     });
 
-    await user.click(await screen.findByRole("button", { name: "Arquivar" }));
+    await user.click(await screen.findByRole("button", { name: "Archive" }));
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Arquivar este link?")).toBeInTheDocument();
+    expect(within(dialog).getByText("Archive this link?")).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: "Arquivar" }));
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
-    expect(await screen.findByText("Arquivado.")).toBeInTheDocument();
+    expect(await screen.findByText("Archived.")).toBeInTheDocument();
     expect(archiveCalls).toBe(1);
   });
 });

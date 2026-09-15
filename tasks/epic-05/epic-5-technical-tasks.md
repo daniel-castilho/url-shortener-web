@@ -6,7 +6,7 @@ Add shadcn pieces with the project CLI/pattern already in components.json. Do no
 
 - [ ] Keep AuthProvider / ErrorBoundary / Private as they are.
 - [ ] Header spacing unified; product label links to /.
-- [ ] Sair stays logout() from context.
+- [ ] Sign out stays logout() from context.
 
 ## 5.2 Primitives
 

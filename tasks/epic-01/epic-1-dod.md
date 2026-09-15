@@ -185,7 +185,7 @@ LOCAL — awaiting push
 | Case | Expected | Status |
 | --- | --- | --- |
 | Login, F5 on /links | Still authenticated (already true on main) | Hypothesis |
-| Sair | /, Entrar visible, us.* empty | Hypothesis |
+| Sign out | /, Sign in visible, us.* empty | Hypothesis |
 | Two parallel 401s | One POST /api/v1/auth/refresh | Hypothesis |
 | Refresh 401/400 | Nav logged out, URL /login, us.* empty | Hypothesis |
 | Token without user keys | Mount clears storage (already true) | Hypothesis |

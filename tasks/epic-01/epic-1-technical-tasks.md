@@ -16,7 +16,7 @@ Do not recreate errors.ts, auth.ts, AuthContext.tsx, or twelve-factors.md.
 - [ ] Keep mutex + skip list for /api/v1/auth/login, register, refresh.
 - [ ] Keep storage keys split (us.userId / us.email / us.name), not a single us.user JSON blob.
 - [ ] Keep login() writing tokens + user and navigating to /links.
-- [ ] Keep button Sair calling logout() then queryClient.clear() + navigate("/").
+- [ ] Keep button Sign out calling logout() then queryClient.clear() + navigate("/").
 
 ## 1.3 Gates
 

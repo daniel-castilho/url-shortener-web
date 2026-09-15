@@ -22,7 +22,7 @@ e5f4e1d docs: epic-2 evidence, contract note, changelog, debt matrix
 300f230 refactor(pages): shared ApiErrorMessage component (copy + id: requestId)
 63697e8 ci: run npm test before build in check job
 3e59c64 feat(home): mapApiError + requestId on shorten errors, input type=url
-5e68593 feat(app): ErrorBoundary around routes with PT-BR fallback + retry
+5e68593 feat(app): ErrorBoundary around routes with English fallback + retry
 e7e08cb feat(api): X-Request-Id per attempt + requestId on ApiError + pages
 3933820 test(kernel): node --test suite + refresh single-flight coordinator
 ```
@@ -41,7 +41,7 @@ e7e08cb feat(api): X-Request-Id per attempt + requestId on ApiError + pages
 > url-shortener-web@0.1.0 test
 > node --test 'src/lib/*.test.ts'
 
-✔ mapApiError maps known statuses to PT-BR copy (0.989893ms)
+✔ mapApiError maps known statuses to English copy (0.989893ms)
 ✔ mapApiError falls back to generic copy for other statuses (0.184983ms)
 ✔ two overlapping callers share one refresh (single-flight) (1.079458ms)
 ✔ sequential callers trigger a new refresh each time (0.36984ms)
@@ -160,7 +160,7 @@ pre-squash head `eb6657a468f77c51a62c04cc206506b477ae51af` (also success).
 | Case | Expected | Result |
 | --- | --- | --- |
 | Trigger API 400 on login | Mapped copy + request id visible | Hypothesis (TD-13) — not yet exercised against live backend |
-| Throw in a page (temporary throw) | Fallback, Tentar de novo restores | Hypothesis (TD-13) — not yet exercised |
+| Throw in a page (temporary throw) | Fallback, Try again restores | Hypothesis (TD-13) — not yet exercised |
 | Network panel on any api call | Request header X-Request-Id | Hypothesis (TD-13) — not yet exercised |
 | npm test in CI log | Suite ran, not skipped | PASS — run 34800494248 on head bbb5a951dfd66d303654f3d94de569da1127cee3, job `check` step `Test` ran `npm test` (conclusion: success) |
 

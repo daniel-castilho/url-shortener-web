@@ -1,21 +1,21 @@
 export function mapApiError(status: number, retryAfterSec?: number): string {
   switch (status) {
     case 400:
-      return "Dados inv\u00e1lidos.";
+      return "Invalid data.";
     case 401:
-      return "Sess\u00e3o expirada.";
+      return "Session expired.";
     case 403:
-      return "Voc\u00ea n\u00e3o \u00e9 o dono deste link.";
+      return "You are not the owner of this link.";
     case 404:
-      return "Link nao encontrado.";
+      return "Link not found.";
     case 409:
-      return "Este alias j\u00e1 existe.";
+      return "This alias already exists.";
     case 429:
       return typeof retryAfterSec === "number"
-        ? `Muitas tentativas. Tente em ${retryAfterSec}s.`
-        : "Muitas tentativas. Espere um pouco.";
+        ? `Too many requests. Try in ${retryAfterSec}s.`
+        : "Too many requests. Please wait a moment.";
     default:
-      return "N\u00e3o foi poss\u00edvel completar a opera\u00e7\u00e3o.";
+      return "Could not complete the operation.";
   }
 }
 

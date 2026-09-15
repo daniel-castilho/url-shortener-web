@@ -23,16 +23,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     if (this.state.hasError) {
       return (
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Algo deu errado</h1>
+          <h1 className="text-2xl font-semibold">Something went wrong</h1>
           <p className="text-sm text-muted-foreground">
-            Ocorreu um erro inesperado. Tente novamente.
+            An unexpected error occurred. Please try again.
           </p>
           <button
             type="button"
             onClick={() => this.setState({ hasError: false })}
             className="underline hover:text-primary"
           >
-            Tentar de novo
+            Try again
           </button>
         </div>
       );

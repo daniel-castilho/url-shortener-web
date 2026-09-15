@@ -13,18 +13,18 @@ export default function LinksPage() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
   });
-  if (q.isPending) return <p>Carregando</p>;
+  if (q.isPending) return <p>Loading</p>;
   if (q.error) return <ApiErrorMessage error={q.error} />;
   const items = q.data.pages.flatMap((page) => page.items);
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Meus links</h1>
+      <h1 className="text-2xl font-semibold">My links</h1>
       {items.length === 0 ? (
         <EmptyState
-          title="Nenhum link ainda."
+          title="No links yet."
           action={
             <Link className="text-sm underline underline-offset-4" to="/">
-              Encurtar uma URL
+              Shorten a URL
             </Link>
           }
         />
@@ -40,7 +40,7 @@ export default function LinksPage() {
                     </Link>
                     <p className="truncate text-sm text-muted-foreground">{item.originalUrl}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">cliques: {item.clickCount}</p>
+                  <p className="text-sm text-muted-foreground">Clicks: {item.clickCount}</p>
                 </CardContent>
               </Card>
             </li>
@@ -54,7 +54,7 @@ export default function LinksPage() {
           onClick={() => q.fetchNextPage()}
           disabled={q.isFetchingNextPage}
         >
-          Mais
+          Load more
         </Button>
       )}
     </div>

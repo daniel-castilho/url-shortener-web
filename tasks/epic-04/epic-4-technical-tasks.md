@@ -5,12 +5,12 @@ Read docs/api-contract.md before changing DTOs. Do not rename items/nextCursor/h
 ## 4.1 List + cursor
 
 - [ ] LinksPage: useQuery or useInfiniteQuery with limit (e.g. 20).
-- [ ] Mais disabled while fetching next page.
+- [ ] Load more disabled while fetching next page.
 - [ ] Append items; do not replace the first page when loading page two.
 
 ## 4.2 Empty / pending
 
-- [ ] isPending first paint is Carregando or skeletons, not an empty list.
+- [ ] isPending first paint is Loading or skeletons, not an empty list.
 - [ ] items.length === 0 && !hasMore → empty copy + link to /.
 
 ## 4.3 Detail
@@ -29,7 +29,7 @@ Read docs/api-contract.md before changing DTOs. Do not rename items/nextCursor/h
 
 - [ ] Call the current helper (DELETE or PATCH). Follow the contract.
 - [ ] After success, go to /links or mark the row archived in place — pick one, document in CHANGELOG.
-- [ ] mapApiError: add 404 if absent ("Link nao encontrado.").
+- [ ] mapApiError: add 404 if absent ("Link not found.").
 
 ## 4.6 Tests / docs
 

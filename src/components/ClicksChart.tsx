@@ -9,15 +9,15 @@ export function ClicksChart({ series, totalClicks }: ClicksChartProps) {
   const bars = toBarPoints(series);
 
   if (bars.length === 0 || bars.every((b) => b.clicks === 0)) {
-    return <p className="text-sm text-muted-foreground">Sem cliques no período.</p>;
+    return <p className="text-sm text-muted-foreground">No clicks in this period.</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">Cliques nos últimos 30 dias</span>
+        <span className="font-medium">Clicks in the last 30 days</span>
         <span className="text-muted-foreground">
-          Total na janela: {totalClicks}
+          Total in window: {totalClicks}
         </span>
       </div>
       <div className="flex flex-col gap-2">

@@ -12,7 +12,7 @@ export function Private({ children }: { children: React.ReactNode }) {
   // pendingLogout: the logout transition has kicked off but "/" hasn't
   // committed — the private page must vanish, not render a stale frame nor
   // bounce to /login mid-transition.
-  if (status === "loading" || pendingLogout) return <p>Carregando</p>;
+  if (status === "loading" || pendingLogout) return <p>Loading</p>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
@@ -22,29 +22,29 @@ function Nav() {
   return (
     <nav className="flex flex-wrap items-center gap-4 text-sm">
       <Link to="/" className="font-semibold">
-        Início
+        Home
       </Link>
       {isAuthenticated ? (
         <>
           <Link to="/links" className="underline-offset-4 hover:underline">
             Links
           </Link>
-          <span className="ml-auto text-muted-foreground">Olá, {user?.name}</span>
+          <span className="ml-auto text-muted-foreground">Hello, {user?.name}</span>
           <button
             type="button"
             onClick={logout}
             className="underline-offset-4 hover:text-primary hover:underline"
           >
-            Sair
+            Sign out
           </button>
         </>
       ) : (
         <>
           <Link to="/login" className="ml-auto underline-offset-4 hover:underline">
-            Entrar
+            Sign in
           </Link>
           <Link to="/register" className="underline-offset-4 hover:underline">
-            Registrar
+            Sign up
           </Link>
         </>
       )}

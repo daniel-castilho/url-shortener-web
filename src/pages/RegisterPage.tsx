@@ -24,9 +24,9 @@ export default function RegisterPage() {
   }
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <h1 className="text-2xl font-semibold">Criar conta</h1>
+      <h1 className="text-2xl font-semibold">Create account</h1>
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name">Name</Label>
         <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="space-y-2">
@@ -40,7 +40,7 @@ export default function RegisterPage() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           type="password"
@@ -50,7 +50,7 @@ export default function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
       </div>
-      <Button type="submit">Registrar</Button>
+      <Button type="submit">Register</Button>
       {error !== null && <ApiErrorMessage error={error} />}
     </form>
   );

@@ -22,7 +22,7 @@ Pass: no location.href; no getToken( in pages/App.tsx; no accessToken; api.ts do
 | Case | Expected |
 | --- | --- |
 | Login, F5 on /links | Still authenticated (already true on main) |
-| Sair | /, Entrar visible, us.* empty |
+| Sign out | /, Sign in visible, us.* empty |
 | Two parallel 401s | One POST /api/v1/auth/refresh |
 | Refresh 401/400 | Nav logged out, URL /login, us.* empty |
 | Token without user keys | Mount clears storage (already true) |

@@ -18,7 +18,7 @@
 
 ## 2.3 ErrorBoundary
 
-- [ ] src/components/ErrorBoundary.tsx — fallback + button Tentar de novo.
+- [ ] src/components/ErrorBoundary.tsx — fallback + button Try again.
 - [ ] Wire in App.tsx around routes (not around the entire document if Nav should survive).
 - [ ] No Sentry. No window.onerror pipeline.
 

@@ -26,8 +26,8 @@ interface AuthContextValue {
   token: string | null;
   status: AuthStatus;
   isAuthenticated: boolean;
-  // True between the "Sair" click and the router committing "/". Private
-  // shows "Carregando" in this window instead of <Navigate to="/login">.
+  // True between the "Sign out" click and the router committing "/". Private
+  // shows "Loading" in this window instead of <Navigate to="/login">.
   pendingLogout: boolean;
   login: (auth: AuthResponse) => void;
   logout: () => void;
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // (the api layer already attempted refresh and emitted "cleared";
             //  we swallow the bounce for public routes below)
           } else if (err instanceof Error && "status" in err && (err as ApiErrorLike).status === 404) {
-            console.log("Java /me ausente");
+            console.log("Java /me missing");
           }
         })
         .finally(() => {
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [navigate, queryClient, pendingLogout]);
 
   // Finish the logout only after the home transition commits. The session is
-  // kept visible while on /links* (Private shows "Carregando" via pendingLogout),
+  // kept visible while on /links* (Private shows "Loading" via pendingLogout),
   // then cleared atomically with the flag once "/" is the real location.
   useEffect(() => {
     if (pendingLogout && location.pathname === "/") {
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (cookieMode) {
       api.logout().catch(() => {});
     }
-    // Flag BEFORE anything clears the session: Private shows "Carregando"
+    // Flag BEFORE anything clears the session: Private shows "Loading"
     // (never <Navigate to="/login">) until the home route commits.
     setPendingLogout(true);
     // The router pushes "/" synchronously; the pendingLogout effect below

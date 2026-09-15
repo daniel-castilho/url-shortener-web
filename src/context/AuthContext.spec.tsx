@@ -28,9 +28,9 @@ function Probe() {
       <p>pending: {pendingLogout ? "true" : "false"}</p>
       <p>path: {location.pathname}</p>
       <button type="button" onClick={logout}>
-        Sair
+        Sign out
       </button>
-      <Link to="/links">Ir para /links</Link>
+      <Link to="/links">Go to /links</Link>
     </>
   );
 }
@@ -57,7 +57,7 @@ function renderCookieProvider() {
 }
 
 describe("AuthProvider (cookie mode)", () => {
-  it("/me 200 hidrata o usuário sem expor Authorization nem cookie", async () => {
+  it("/me 200 hydrates user without exposing Authorization or cookie", async () => {
     let meHeaders: Record<string, string> = {};
     server.use(
       http.get("/api/v1/auth/me", ({ request }) => {
@@ -78,7 +78,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(meHeaders["cookie"]).toBeUndefined();
   });
 
-  it("/me 401 seguido de refresh 401 (visitante anônimo): fica na rota pública, ready", async () => {
+  it("/me 401 followed by refresh 401 (anonymous visitor): stays on public route, ready", async () => {
     let refreshBody: string | null = null;
     server.use(
       http.post("/api/v1/auth/refresh", async ({ request }) => {
@@ -96,7 +96,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(refreshBody).toBe("");
   });
 
-  it("/me pendente: primeiro paint é loading, não /login", async () => {
+  it("/me pending: first paint is loading, not /login", async () => {
     server.use(
       http.get("/api/v1/auth/me", () => new Promise<Response>(() => {})),
     );
@@ -108,7 +108,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
   });
 
-  it("/me 404 (endpoint ausente): status ready, sem logout", async () => {
+  it("/me 404 (missing endpoint): status ready, no logout", async () => {
     server.use(
       http.get("/api/v1/auth/me", () => new HttpResponse(null, { status: 404 })),
     );
@@ -120,7 +120,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(screen.getByText("user: none")).toBeInTheDocument();
   });
 
-  it("anônimo em rota privada (cookie): Private leva ao /login após /me 401+refresh 401", async () => {
+  it("anonymous on private route (cookie): Private goes to /login after /me 401+refresh 401", async () => {
     server.use(
       http.post("/api/v1/auth/refresh", () => new HttpResponse(null, { status: 401 })),
     );
@@ -152,7 +152,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(screen.getByText("status: ready")).toBeInTheDocument();
   });
 
-  it("logout em rota privada (cookie) termina em /, nunca em /login", async () => {
+  it("logout on private route (cookie) ends at /, never at /login", async () => {
     server.use(
       http.get("/api/v1/auth/me", () =>
         HttpResponse.json({ userId: "1", email: "cookie@example.com", name: "Cookie User" }),
@@ -162,7 +162,7 @@ describe("AuthProvider (cookie mode)", () => {
     renderPrivateCookieProvider();
 
     expect(await screen.findByText("auth: true")).toBeInTheDocument();
-    screen.getByRole("button", { name: "Sair" }).click();
+    screen.getByRole("button", { name: "Sign out" }).click();
 
     expect(await screen.findByText("path: /")).toBeInTheDocument();
     expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
@@ -171,7 +171,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(screen.getByText("user: none")).toBeInTheDocument();
   });
 
-  it("enquanto pendingLogout, cleared sintético não bota /login (sem janela de relógio)", async () => {
+  it("while pendingLogout, synthetic cleared does not push /login (no wall-clock window)", async () => {
     server.use(
       http.get("/api/v1/auth/me", () =>
         HttpResponse.json({ userId: "1", email: "cookie@example.com", name: "Cookie User" }),
@@ -180,9 +180,9 @@ describe("AuthProvider (cookie mode)", () => {
 
     renderPrivateCookieProvider();
 
-    expect(await screen.findByText("auth: true")).toBeInTheDocument();
-    screen.getByRole("button", { name: "Sair" }).click();
-    // Um 401/refresh in-flight pode emitir "cleared" durante a transição.
+expect(await screen.findByText("auth: true")).toBeInTheDocument();
+    screen.getByRole("button", { name: "Sign out" }).click();
+    // An in-flight 401/refresh may emit "cleared" during transition.
     act(() => {
       emitSession({ type: "cleared" });
     });
@@ -198,7 +198,7 @@ describe("AuthProvider + Private (bearer mode)", () => {
     vi.stubEnv("VITE_AUTH_MODE", "bearer");
   });
 
-  it("sessão em sessionStorage autentica no primeiro paint — sem form de login", () => {
+  it("session in sessionStorage authenticates on first paint — no login form", () => {
     sessionStorage.setItem("us.token", "tok-123");
     sessionStorage.setItem("us.userId", "1");
     sessionStorage.setItem("us.email", "seeded@example.com");
@@ -213,14 +213,14 @@ describe("AuthProvider + Private (bearer mode)", () => {
     expect(screen.queryByRole("button", { name: "Login" })).not.toBeInTheDocument();
   });
 
-  it("sem sessão: Private redireciona para /login no primeiro paint", () => {
+  it("no session: Private redirects to /login on first paint", () => {
     renderWithBearerProviders();
 
     expect(screen.getByText("path: /login")).toBeInTheDocument();
     expect(screen.getByText("auth: false")).toBeInTheDocument();
   });
 
-  it("logout em rota privada termina em /, nunca em /login (raça de transição)", async () => {
+  it("logout on private route ends at /, never at /login (transition race)", async () => {
     sessionStorage.setItem("us.token", "tok-123");
     sessionStorage.setItem("us.userId", "1");
     sessionStorage.setItem("us.email", "seeded@example.com");
@@ -229,7 +229,7 @@ describe("AuthProvider + Private (bearer mode)", () => {
     renderWithBearerProviders();
 
     expect(screen.getByText("auth: true")).toBeInTheDocument();
-    screen.getByRole("button", { name: "Sair" }).click();
+    screen.getByRole("button", { name: "Sign out" }).click();
 
     expect(await screen.findByText("path: /")).toBeInTheDocument();
     expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
@@ -238,7 +238,7 @@ describe("AuthProvider + Private (bearer mode)", () => {
     expect(screen.getByText("user: none")).toBeInTheDocument();
   });
 
-  it("após o logout concluir, /links anônimo ainda leva a /login", async () => {
+  it("after logout completes, anonymous /links still goes to /login", async () => {
     sessionStorage.setItem("us.token", "tok-123");
     sessionStorage.setItem("us.userId", "1");
     sessionStorage.setItem("us.email", "seeded@example.com");
@@ -247,12 +247,12 @@ describe("AuthProvider + Private (bearer mode)", () => {
     renderWithBearerProviders();
 
     expect(screen.getByText("auth: true")).toBeInTheDocument();
-    screen.getByRole("button", { name: "Sair" }).click();
+    screen.getByRole("button", { name: "Sign out" }).click();
 
     expect(await screen.findByText("path: /")).toBeInTheDocument();
     expect(await screen.findByText("auth: false")).toBeInTheDocument();
 
-    screen.getByRole("link", { name: "Ir para /links" }).click();
+    screen.getByRole("link", { name: "Go to /links" }).click();
     expect(await screen.findByText("path: /login")).toBeInTheDocument();
   });
 });

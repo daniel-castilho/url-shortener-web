@@ -33,8 +33,8 @@ Do not adopt Vitest Browser Mode or "E2E as the biggest slice". This app is a st
 One RTL + MSW file each:
 
 - LoginPage: 401 mapped copy + id visible; 200 calls login.
-- HomePage: invalid URL does not hit MSW; 201 shows shortUrl + Copiar; 429 + Retry-After shows N.
-- LinksPage: empty state; list + Mais when hasMore.
+- HomePage: invalid URL does not hit MSW; 201 shows shortUrl + Copy; 429 + Retry-After shows N.
+- LinksPage: empty state; list + Load more when hasMore.
 - LinkDetailPage: PATCH only filled fields; archive Dialog.
 - AuthProvider cookie: /me 200 hydrates; /me 401 clears (after refresh-loop fix).
 

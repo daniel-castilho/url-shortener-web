@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("HomePage", () => {
-  it("URL inválida não chama o MSW", async () => {
+  it("invalid URL does not call MSW", async () => {
     let shortenCalls = 0;
     server.use(
       http.post("/api/v1/urls", async () => {
@@ -34,33 +34,33 @@ describe("HomePage", () => {
     renderWithProviders(<HomePage />);
 
     await user.type(screen.getByLabelText("URL"), "ftp://example.com");
-    await user.click(screen.getByRole("button", { name: "Encurtar" }));
+    await user.click(screen.getByRole("button", { name: "Shorten" }));
 
-    expect(await screen.findByText("URL inválida. Use http:// ou https://")).toBeInTheDocument();
+    expect(await screen.findByText("Invalid URL. Use http:// or https://")).toBeInTheDocument();
     expect(shortenCalls).toBe(0);
     expect(screen.queryByText("https://tyny.url/abc123")).not.toBeInTheDocument();
   });
 
-  it("201 mostra o shortUrl e confirma a cópia", async () => {
+  it("201 shows shortUrl and confirms copy", async () => {
     const user = userEvent.setup();
     renderWithProviders(<HomePage />);
 
     await user.type(screen.getByLabelText("URL"), "https://example.com/very/long/path");
-    await user.click(screen.getByRole("button", { name: "Encurtar" }));
+    await user.click(screen.getByRole("button", { name: "Shorten" }));
 
     expect(await screen.findByText("https://tyny.url/abc123")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Copiar" }));
-    expect(await screen.findByText("Copiado!")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(await screen.findByText("Copied!")).toBeInTheDocument();
   });
 
-  it("429 com Retry-After mostra N segundos", async () => {
+  it("429 with Retry-After shows N seconds", async () => {
     const user = userEvent.setup();
     renderWithProviders(<HomePage />);
 
     await user.type(screen.getByLabelText("URL"), "https://ratelimit.example.com");
-    await user.click(screen.getByRole("button", { name: "Encurtar" }));
+    await user.click(screen.getByRole("button", { name: "Shorten" }));
 
-    expect(await screen.findByText("Muitas tentativas. Tente em 7s.")).toBeInTheDocument();
+    expect(await screen.findByText("Too many requests. Try in 7s.")).toBeInTheDocument();
   });
 });

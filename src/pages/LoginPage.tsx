@@ -23,7 +23,7 @@ export default function LoginPage() {
   }
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <h1 className="text-2xl font-semibold">Entrar</h1>
+      <h1 className="text-2xl font-semibold">Sign in</h1>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -35,7 +35,7 @@ export default function LoginPage() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           type="password"

@@ -22,7 +22,7 @@
 ## 3.4 Success + copy
 
 - [ ] Keep last ShortenResponse in page state or mutation data.
-- [ ] Copiar uses navigator.clipboard.writeText; catch and set a local message.
+- [ ] Copy uses navigator.clipboard.writeText; catch and set a local message.
 
 ## 3.5 Tests and docs
 
@@ -36,5 +36,5 @@
 - [ ] Anonymous shorten works
 - [ ] Logged-in alias + ttl in the network body
 - [ ] 429 copy uses N when header present
-- [ ] Copiar works or shows failure
+- [ ] Copy works or shows failure
 - [ ] npm test pasted
