@@ -7,8 +7,9 @@ import RegisterPage from "@/pages/RegisterPage";
 import LinksPage from "@/pages/LinksPage";
 import LinkDetailPage from "@/pages/LinkDetailPage";
 
-function Private({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+export function Private({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, status } = useAuth();
+  if (status === "loading") return <p>Carregando</p>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
