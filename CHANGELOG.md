@@ -8,6 +8,28 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cookie-mode auth races surfaced by the HTTPS same-origin UAT probe** — three
+  frames would bounce a user to `/login` at the wrong moment:
+  - Anonymous visit to a public route (`/register`, `/`) no longer redirects to
+    `/login` while the cookie-mode `/me` rehydrate is still settling: a `401`
+    there means "anonymous visitor", not "expired session", so the `cleared`
+    event is swallowed while rehydrating.
+  - `isAuthenticated` (cookie mode) is now derived from the rehydrated `user`
+    instead of the always-null bearer `token`, so a full reload on `/links`
+    keeps the authenticated nav instead of bouncing to `/login`.
+  - Logout from a private route (`/links`) lands on `/` — the router transition
+    now commits before the session state goes anonymous, so `Private`'s
+    `<Navigate to="/login">` can no longer win the transition race; in-flight
+    late `cleared` events are ignored for a 5s window after an intentional
+    logout.
+  - Regression coverage added in `src/context/AuthContext.spec.tsx` for the
+    anonymous-public-route, anonymous-private-route, and logout-on-private-route
+    cases. Verified end-to-end against the Caddy edge at `https://localhost:8443`
+    (cookie mode): cold `/register` stays, register → `/links`, F5 rehydrate,
+    `GET /{id}` → 302, logout → home, anonymous `/links` → `/login`.
+
 ## [0.2.0] - 2026-09-15
 
 ### Added

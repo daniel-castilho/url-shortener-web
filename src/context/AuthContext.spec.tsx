@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 function Probe() {
-  const { user, isAuthenticated, status } = useAuth();
+  const { user, isAuthenticated, status, logout } = useAuth();
   const location = useLocation();
   return (
     <>
@@ -25,6 +25,9 @@ function Probe() {
       <p>auth: {isAuthenticated ? "true" : "false"}</p>
       <p>status: {status}</p>
       <p>path: {location.pathname}</p>
+      <button type="button" onClick={logout}>
+        Sair
+      </button>
     </>
   );
 }
@@ -72,7 +75,7 @@ describe("AuthProvider (cookie mode)", () => {
     expect(meHeaders["cookie"]).toBeUndefined();
   });
 
-  it("/me 401 seguido de refresh 401 limpa a sessão e vai para /login", async () => {
+  it("/me 401 seguido de refresh 401 (visitante anônimo): fica na rota pública, ready", async () => {
     let refreshBody: string | null = null;
     server.use(
       http.post("/api/v1/auth/refresh", async ({ request }) => {
@@ -83,7 +86,8 @@ describe("AuthProvider (cookie mode)", () => {
 
     renderCookieProvider();
 
-    expect(await screen.findByText("path: /login")).toBeInTheDocument();
+    expect(await screen.findByText("status: ready")).toBeInTheDocument();
+    expect(screen.getByText("path: /")).toBeInTheDocument();
     expect(screen.getByText("user: none")).toBeInTheDocument();
     expect(screen.getByText("auth: false")).toBeInTheDocument();
     expect(refreshBody).toBe("");
@@ -111,6 +115,38 @@ describe("AuthProvider (cookie mode)", () => {
     expect(await screen.findByText("status: ready")).toBeInTheDocument();
     expect(screen.getByText("path: /")).toBeInTheDocument();
     expect(screen.getByText("user: none")).toBeInTheDocument();
+  });
+
+  it("anônimo em rota privada (cookie): Private leva ao /login após /me 401+refresh 401", async () => {
+    server.use(
+      http.post("/api/v1/auth/refresh", () => new HttpResponse(null, { status: 401 })),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={["/links"]}>
+          <AuthProvider>
+            <Routes>
+              <Route
+                path="/links"
+                element={
+                  <Private>
+                    <Probe />
+                  </Private>
+                }
+              />
+              <Route path="/login" element={<Probe />} />
+            </Routes>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("path: /login")).toBeInTheDocument();
+    expect(screen.getByText("status: ready")).toBeInTheDocument();
   });
 });
 
@@ -140,6 +176,24 @@ describe("AuthProvider + Private (bearer mode)", () => {
     expect(screen.getByText("path: /login")).toBeInTheDocument();
     expect(screen.getByText("auth: false")).toBeInTheDocument();
   });
+
+  it("logout em rota privada termina em /, nunca em /login (raça de transição)", async () => {
+    sessionStorage.setItem("us.token", "tok-123");
+    sessionStorage.setItem("us.userId", "1");
+    sessionStorage.setItem("us.email", "seeded@example.com");
+    sessionStorage.setItem("us.name", "Seeded User");
+
+    renderWithBearerProviders();
+
+    expect(screen.getByText("auth: true")).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Sair" });
+    screen.getByRole("button", { name: "Sair" }).click();
+
+    expect(await screen.findByText("path: /")).toBeInTheDocument();
+    expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
+    expect(screen.getByText("auth: false")).toBeInTheDocument();
+    expect(screen.getByText("status: ready")).toBeInTheDocument();
+  });
 });
 
 function renderWithBearerProviders() {
@@ -154,6 +208,7 @@ function renderWithBearerProviders() {
       <MemoryRouter initialEntries={["/links"]}>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<Probe />} />
             <Route
               path="/links"
               element={
