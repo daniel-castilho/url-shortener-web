@@ -186,13 +186,13 @@ describe("AuthProvider + Private (bearer mode)", () => {
     renderWithBearerProviders();
 
     expect(screen.getByText("auth: true")).toBeInTheDocument();
-    await screen.findByRole("button", { name: "Sair" });
     screen.getByRole("button", { name: "Sair" }).click();
 
     expect(await screen.findByText("path: /")).toBeInTheDocument();
     expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
-    expect(screen.getByText("auth: false")).toBeInTheDocument();
-    expect(screen.getByText("status: ready")).toBeInTheDocument();
+    expect(await screen.findByText("auth: false")).toBeInTheDocument();
+    expect(await screen.findByText("status: ready")).toBeInTheDocument();
+    expect(screen.getByText("user: none")).toBeInTheDocument();
   });
 });
 
