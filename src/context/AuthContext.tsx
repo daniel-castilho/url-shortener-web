@@ -19,9 +19,12 @@ interface ApiErrorLike {
   status: number;
 }
 
+type AuthStatus = "loading" | "ready";
+
 interface AuthContextValue {
   user: User | null;
   token: string | null;
+  status: AuthStatus;
   isAuthenticated: boolean;
   login: (auth: AuthResponse) => void;
   logout: () => void;
@@ -30,8 +33,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
+  // Bearer mode: the session lives in sessionStorage, so the first paint can
+  // already be authenticated — no effect needed. Cookie mode starts "loading"
+  // until the async /me rehydrate settles.
+  const [user, setUserState] = useState<User | null>(() => (isCookieAuth() ? null : getUser()));
+  const [token, setTokenState] = useState<string | null>(() => (isCookieAuth() ? null : getToken()));
+  const [status, setStatus] = useState<AuthStatus>(() => (isCookieAuth() ? "loading" : "ready"));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -50,7 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else if (err instanceof Error && "status" in err && (err as ApiErrorLike).status === 404) {
             console.log("Java /me ausente");
           }
-        });
+        })
+        .finally(() => setStatus("ready"));
       return;
     }
 
@@ -70,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (e.type === "cleared") {
         setTokenState(null);
         setUserState(null);
+        setStatus("ready");
         queryClient.clear();
         if (window.location.pathname !== "/login") navigate("/login");
       } else {
@@ -104,7 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, status, isAuthenticated: !!token, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

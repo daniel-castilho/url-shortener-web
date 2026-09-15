@@ -8,6 +8,18 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Rehydrate race on private routes** — F5 on `/links` (or `/links/:id`) bounced
+  to `/login` while the session was valid: `Private` read `isAuthenticated` on
+  first paint, before the `AuthProvider` effect rehydrated it. Bearer mode now
+  seeds `user`/`token` state synchronously from `sessionStorage`
+  (`useState` lazy initializers); cookie mode gains a `status:
+  "loading" | "ready"` flow — `Private` renders "Carregando" while `/me` is in
+  flight instead of navigating, and a `/me` `404` (endpoint missing) keeps the
+  route instead of bouncing. Regression specs added (bearer first-paint without
+  login form, cookie loading/no-bounce, `/me` 404).
+
 ### Added
 
 - **Security headers on the SPA document (Epic 11)** — Caddy (`@tls` matcher HSTS gating) and NGINX (commented TLS block) ship `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-DNS-Prefetch-Control: off`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'` on the SPA document; HSTS (`max-age=31536000; includeSubDomains; preload`) gated to TLS-terminated blocks only. Caddy uses `@tls protocol https` matcher; NGINX provides commented template for TLS server block. `style-src 'unsafe-inline'` justified in deploy.md (React inline style attrs; build hashes cover `'self'`). Headers scoped to SPA document only — short-code proxy and API paths pass through Java headers untouched. `docs/deploy.md` extended with header provenance, CSP justification, and HSTS placement rules.
