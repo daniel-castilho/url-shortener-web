@@ -22,6 +22,19 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- **Release provenance (Epic 12)** — on tag `v*`, the release workflow now runs
+  the full gate (`npm test` + `npm run test:integration` + `npm run build`)
+  before packing, then publishes three artifacts with the same honesty as the
+  backend service: `url-shortener-web-<tag>.tar.gz` (the `dist/` archive),
+  `sbom-url-shortener-web-<tag>.json` (CycloneDX 1.5 SBOM of the production
+  dependency tree, generated with the Node 24-native `npm sbom
+  --sbom-format cyclonedx --omit dev --package-lock-only` — no runtime
+  dependency added), and `SHA256SUMS` covering both files (verified with
+  `sha256sum -c` inside the job). All three go to the `release-<tag>` artifact
+  (30-day retention) **and** to a GitHub Release
+  (`softprops/action-gh-release@v3.0.3`, `generate_release_notes: true`).
+  Verification recipe documented in `docs/deploy.md` → *Release artifacts*.
+
 - **Security headers on the SPA document (Epic 11)** — Caddy (`@tls` matcher HSTS gating) and NGINX (commented TLS block) ship `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-DNS-Prefetch-Control: off`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'` on the SPA document; HSTS (`max-age=31536000; includeSubDomains; preload`) gated to TLS-terminated blocks only. Caddy uses `@tls protocol https` matcher; NGINX provides commented template for TLS server block. `style-src 'unsafe-inline'` justified in deploy.md (React inline style attrs; build hashes cover `'self'`). Headers scoped to SPA document only — short-code proxy and API paths pass through Java headers untouched. `docs/deploy.md` extended with header provenance, CSP justification, and HSTS placement rules.
 
 - **Integration tests (Epic 10)** — Vitest + jsdom + Testing Library + MSW
