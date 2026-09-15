@@ -7,8 +7,6 @@
 
 {$SITE_ADDRESS}
 
-@tls protocol https
-
 # --- Rule 1-2: API prefixes -> Java -------------------------------
 handle /api* {
 	reverse_proxy {$JAVA_UPSTREAM}

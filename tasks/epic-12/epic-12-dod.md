@@ -83,9 +83,27 @@ SBOM content check:
 
 ### Tag run status
 
-**Hypothesis — no tag cut.** Live `v*` workflow run pending an owner-cut tag;
-PR CI green on main is the gate for merge (per epic-12-testing.md and the epic
-brief). Once a tag is pushed, its run URL + release URL belong here.
+**VERIFIED — live `v*` run ✓** (filled 2026-09-15).
+
+    $ gh run list --limit 3
+    completed success Release v0.2.0  CI  main  push  34912928414  37s  2026-09-15T…
+    completed success Merge pull request #13 …   CI  main  push  34912249005  35s  2026-09-15T…
+    completed success Merge pull request #12 …   CI  main  push  34909072595  33s  2026-09-15T…
+
+    Release workflow run: https://github.com/daniel-castilho/url-shortener-web/actions/runs/34912928414
+    Release:              https://github.com/daniel-castilho/url-shortener-web/releases/tag/v0.2.0
+    Tag commit:           4689489 chore(release): 0.2.0 (package.json → 0.2.0; CHANGELOG consolidated)
+
+Asset verification (re-downloaded locally):
+
+    $ cd /tmp/opencode/v020-verify && sha256sum -c SHA256SUMS
+    url-shortener-web-v0.2.0.tar.gz: OK
+    sbom-url-shortener-web-v0.2.0.json: OK
+
+    $ python3 -c "import json; b=json.load(open('sbom-url-shortener-web-v0.2.0.json')); print(b['bomFormat'], b['specVersion'], len(b['components']), b['metadata']['tools'])"
+    CycloneDX 1.5 34 [{'vendor': 'npm', 'name': 'cli', 'version': '10.8.2'}]
+
+    $ gh release view v0.2.0   # not draft, not prerelease, 3 assets (tar.gz 129227 B, SBOM 32538 B, SHA256SUMS 199 B)
 
 ### CI run on PR
 
