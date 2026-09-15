@@ -8,8 +8,11 @@ import LinksPage from "@/pages/LinksPage";
 import LinkDetailPage from "@/pages/LinkDetailPage";
 
 export function Private({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, status } = useAuth();
-  if (status === "loading") return <p>Carregando</p>;
+  const { isAuthenticated, status, pendingLogout } = useAuth();
+  // pendingLogout: the logout transition has kicked off but "/" hasn't
+  // committed — the private page must vanish, not render a stale frame nor
+  // bounce to /login mid-transition.
+  if (status === "loading" || pendingLogout) return <p>Carregando</p>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }

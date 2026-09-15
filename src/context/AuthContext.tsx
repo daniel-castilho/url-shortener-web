@@ -26,6 +26,9 @@ interface AuthContextValue {
   token: string | null;
   status: AuthStatus;
   isAuthenticated: boolean;
+  // True between the "Sair" click and the router committing "/". Private
+  // shows "Carregando" in this window instead of <Navigate to="/login">.
+  pendingLogout: boolean;
   login: (auth: AuthResponse) => void;
   logout: () => void;
 }
@@ -44,10 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // dead) — not "expired mid-session". Public routes must stay put; Private
   // guards expired sessions on its own.
   const rehydratingRef = useRef(false);
-  // Set during an intentional logout: in-flight requests will fail their
-  // refresh and emit "cleared" after we already navigated home on purpose —
-  // that late event must not bounce the user to /login.
-  const loggingOutRef = useRef(false);
   // Set while logout's navigate("/") transition is still in flight. The auth
   // state only goes null once "/" actually commits, so Private never renders
   // with an anonymous session in the (now abandoned) private route.
@@ -101,10 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("ready");
         queryClient.clear();
         // During cookie rehydrate a "cleared" from a failed anonymous /me
-        // refresh must not hijack public routes to /login; same for the
-        // stale-request "cleared" that lands after an intentional logout.
-        if (rehydratingRef.current || loggingOutRef.current) return;
-        if (window.location.pathname !== "/login") navigate("/login");
+        // refresh must not hijack public routes to /login; same for a
+        // "cleared" that lands while logout's home transition is in flight.
+        if (rehydratingRef.current || pendingLogout) return;
+        // A logged-out/expired session on a public route is already safe —
+        // only a private route (guarded by <Private>) should bounce to login.
+        const path = window.location.pathname;
+        if (path === "/links" || path.startsWith("/links/")) navigate("/login");
       } else {
         setTokenState(getToken());
         setUserState(getUser());
@@ -112,11 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const unsub = subscribeSession(handleSessionEvent);
     return unsub;
-  }, [navigate, queryClient]);
+  }, [navigate, queryClient, pendingLogout]);
 
-  // Finish the logout only after the home transition commits: nulling the
-  // session while the router still shows /links* would re-render Private with
-  // an anonymous user and its <Navigate to="/login"> would win the race.
+  // Finish the logout only after the home transition commits. The session is
+  // kept visible while on /links* (Private shows "Carregando" via pendingLogout),
+  // then cleared atomically with the flag once "/" is the real location.
   useEffect(() => {
     if (pendingLogout && location.pathname === "/") {
       setPendingLogout(false);
@@ -137,29 +139,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     const cookieMode = isCookieAuth();
-    loggingOutRef.current = true;
     if (cookieMode) {
       api.logout().catch(() => {});
     }
+    // Flag BEFORE anything clears the session: Private shows "Carregando"
+    // (never <Navigate to="/login">) until the home route commits.
+    setPendingLogout(true);
+    // The router pushes "/" synchronously; the pendingLogout effect below
+    // clears session state only once the location actually reads "/".
+    navigate("/");
     clearSession();
     clearUser();
-    // Keep the session visible on /links* until "/" commits (see effect
-    // above): a synchronous null here would render Private anonymously and
-    // navigate to /login before the home transition lands.
-    setPendingLogout(true);
-    navigate("/");
-    // Late "cleared" events from requests that were in flight when the
-    // cookies died are expected; stop swallowing after they can land.
-    setTimeout(() => {
-      loggingOutRef.current = false;
-    }, 5000);
   };
 
   return (
     <AuthContext.Provider
       // Bearer: token presence (sessionStorage). Cookie: user presence —
       // token state stays null there, /me hydration (or login) sets user.
-      value={{ user, token, status, isAuthenticated: isCookieAuth() ? !!user : !!token, login, logout }}
+      value={{ user, token, status, isAuthenticated: isCookieAuth() ? !!user : !!token, pendingLogout, login, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { http, HttpResponse } from "msw";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Private } from "@/App";
+import { emitSession } from "@/lib/session-events";
 import { server } from "@/test/setup";
 
 beforeEach(() => {
@@ -17,17 +18,19 @@ afterEach(() => {
 });
 
 function Probe() {
-  const { user, isAuthenticated, status, logout } = useAuth();
+  const { user, isAuthenticated, status, pendingLogout, logout } = useAuth();
   const location = useLocation();
   return (
     <>
       <p>user: {user?.email ?? "none"}</p>
       <p>auth: {isAuthenticated ? "true" : "false"}</p>
       <p>status: {status}</p>
+      <p>pending: {pendingLogout ? "true" : "false"}</p>
       <p>path: {location.pathname}</p>
       <button type="button" onClick={logout}>
         Sair
       </button>
+      <Link to="/links">Ir para /links</Link>
     </>
   );
 }
@@ -148,6 +151,46 @@ describe("AuthProvider (cookie mode)", () => {
     expect(await screen.findByText("path: /login")).toBeInTheDocument();
     expect(screen.getByText("status: ready")).toBeInTheDocument();
   });
+
+  it("logout em rota privada (cookie) termina em /, nunca em /login", async () => {
+    server.use(
+      http.get("/api/v1/auth/me", () =>
+        HttpResponse.json({ userId: "1", email: "cookie@example.com", name: "Cookie User" }),
+      ),
+    );
+
+    renderPrivateCookieProvider();
+
+    expect(await screen.findByText("auth: true")).toBeInTheDocument();
+    screen.getByRole("button", { name: "Sair" }).click();
+
+    expect(await screen.findByText("path: /")).toBeInTheDocument();
+    expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
+    expect(await screen.findByText("auth: false")).toBeInTheDocument();
+    expect(screen.getByText("pending: false")).toBeInTheDocument();
+    expect(screen.getByText("user: none")).toBeInTheDocument();
+  });
+
+  it("enquanto pendingLogout, cleared sintético não bota /login (sem janela de relógio)", async () => {
+    server.use(
+      http.get("/api/v1/auth/me", () =>
+        HttpResponse.json({ userId: "1", email: "cookie@example.com", name: "Cookie User" }),
+      ),
+    );
+
+    renderPrivateCookieProvider();
+
+    expect(await screen.findByText("auth: true")).toBeInTheDocument();
+    screen.getByRole("button", { name: "Sair" }).click();
+    // Um 401/refresh in-flight pode emitir "cleared" durante a transição.
+    act(() => {
+      emitSession({ type: "cleared" });
+    });
+
+    expect(await screen.findByText("path: /")).toBeInTheDocument();
+    expect(screen.queryByText("path: /login")).not.toBeInTheDocument();
+    expect(await screen.findByText("auth: false")).toBeInTheDocument();
+  });
 });
 
 describe("AuthProvider + Private (bearer mode)", () => {
@@ -194,6 +237,24 @@ describe("AuthProvider + Private (bearer mode)", () => {
     expect(await screen.findByText("status: ready")).toBeInTheDocument();
     expect(screen.getByText("user: none")).toBeInTheDocument();
   });
+
+  it("após o logout concluir, /links anônimo ainda leva a /login", async () => {
+    sessionStorage.setItem("us.token", "tok-123");
+    sessionStorage.setItem("us.userId", "1");
+    sessionStorage.setItem("us.email", "seeded@example.com");
+    sessionStorage.setItem("us.name", "Seeded User");
+
+    renderWithBearerProviders();
+
+    expect(screen.getByText("auth: true")).toBeInTheDocument();
+    screen.getByRole("button", { name: "Sair" }).click();
+
+    expect(await screen.findByText("path: /")).toBeInTheDocument();
+    expect(await screen.findByText("auth: false")).toBeInTheDocument();
+
+    screen.getByRole("link", { name: "Ir para /links" }).click();
+    expect(await screen.findByText("path: /login")).toBeInTheDocument();
+  });
 });
 
 function renderWithBearerProviders() {
@@ -202,6 +263,32 @@ function renderWithBearerProviders() {
       queries: { retry: false, gcTime: 0 },
       mutations: { retry: false },
     },
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/links"]}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Probe />} />
+            <Route
+              path="/links"
+              element={
+                <Private>
+                  <Probe />
+                </Private>
+              }
+            />
+            <Route path="/login" element={<Probe />} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+function renderPrivateCookieProvider() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
