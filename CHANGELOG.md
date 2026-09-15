@@ -8,13 +8,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Changed
+
+- **API contract sync (service Epic 10)** — `docs/api-contract.md` refreshed from the Java OpenAPI spec. `AuthResponse` and `UserResponse` now include optional `role: "USER" | "ADMIN"` (absent = USER). Added Admin endpoints section (six routes: list users with cursor/email-prefix filter, list user's links including archived, find link by short code with owner info, block/unblock user, force-archive link). Documented block semantics for existing SPA (blocked login/refresh → 403 "Account blocked.", blocked POST /urls → 403, blocked GET /urls → 200). Cited Java ADR 0011 and `APP_ADMIN_EMAILS` as backend pointers. No `/admin` UI added; no new pages; `VITE_AUTH_MODE` unchanged.
+
 ### Fixed
 
 - **Logout without a wall-clock window** — the 5-second "ignore late `cleared`
   events after logout" timer is gone. The transition race is now closed
-  deterministically: `Sair` sets a `pendingLogout` flag **before** clearing
+  deterministically: `Sign out` sets a `pendingLogout` flag **before** clearing
   anything, `navigate("/")` runs, and the session state + query cache are only
-  cleared once the `/` location has committed. `Private` shows "Carregando"
+  cleared once the `/` location has committed. `Private` shows "Loading"
   while `pendingLogout` is set instead of rendering a stale private frame or
   issuing `<Navigate to="/login">` mid-transition. A late `cleared` from an
   in-flight 401/refresh is harmless on a public route: `cleared` now only
@@ -73,14 +77,14 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 - **Cookie-mode refresh loop (hotfix)** — `401` on any non-auth endpoint now
   triggers the single-flight refresh in cookie mode (`cookieMode ||
   Boolean(getRefreshToken())`), so the `refresh_token` cookie is sent instead of
-  dropping to "Sessão expirada"; retry once, hard-logout on failure stays.
+  dropping to "Session expired"; retry once, hard-logout on failure stays.
   Kernel test proves the gate invokes the coordinator. `engines.node >= 24` +
   `.nvmrc` declared; `api.ts` imports carry `.ts` specifiers so the kernel
   suite can load the fetch boundary.
 
 - **Hard session (Epic 9)** — dual-mode auth (`VITE_AUTH_MODE=bearer|cookie`); fetch always `credentials: "include"`; `Authorization` header only in bearer mode; refresh with empty body in cookie mode; `GET /api/v1/auth/me` rehydrate on mount; `POST /api/v1/auth/logout` call on logout; AuthProvider mount handles 200/401/404 in cookie mode; kernel tests for mode branching; `twelve-factors.md` Decision 1 updated to dual-mode.
 
-- **Analytics panel (Epic 7)** — clickCount totals formatted (pt-BR) on list
+- **Analytics panel (Epic 7)** — clickCount totals formatted (locale) on list
   and detail; series panel on detail with CSS bar chart (no external lib,
   lazy-loaded chunk); `formatClickCount` and `toBarPoints` pure helpers
   tested; `GET /api/v1/urls/{id}/clicks?unit=day` consumed with exact DTO
@@ -111,18 +115,18 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   workflow on tag `v*` uploading `dist/` as an artifact.
 
 - **Shell & design system (Epic 5)** — shared header on every route
-  ("Tyny URL" product name + consolidated nav + user greeting + Sair);
+  ("Tyny URL" product name + consolidated nav + user greeting + Sign out);
   shadcn primitives `Input`, `Label`, `Card`, `Dialog` (deps:
   `@radix-ui/react-label`, `@radix-ui/react-dialog` — sanctioned); all four
   forms migrated to `Label`+`Input` primitives; shared `EmptyState` component;
   links list as card rows (id, originalUrl, clickCount); detail as a labeled
-  field Card; archive behind a confirmation Dialog with inline "Salvo." /
-  "Arquivado." feedback (one feedback pattern — persistent inline text, no
+  field Card; archive behind a confirmation Dialog with inline "Saved." /
+  "Archived." feedback (one feedback pattern — persistent inline text, no
   toast library); mobile-first verified at 375px (no horizontal overflow, nav
   wraps, full-width fields).
 
 - **Links library (Epic 4)** — cursor-paginated list (`useInfiniteQuery`,
-  `Mais` button, page 1 preserved while fetching), empty state with Home link,
+  `Load more` button, page 1 preserved while fetching), empty state with Home link,
   detail page with contract fields (`shortUrl`, `originalUrl`, `clickCount`,
   `expiresAt`, `title`, `tags`, archived badge) + back link, `404` error
   mapping, edit form sending PATCH with only filled fields (`buildPatch`,
@@ -132,15 +136,14 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 - **Shorten flow as product (Epic 3)** — auth-gated optional fields on Home
   (`customAlias` + `ttlSeconds` only when logged in; anonymous posts
   `originalUrl` only), client-side URL validation before fetch
-  (`isValidHttpUrl`), `Retry-After` parsing on `429` ("Muitas tentativas.
-  Tente em Ns."), copy-to-clipboard on success with visible failure feedback,
+  (`isValidHttpUrl`), `Retry-After` parsing on `429` ("Too many requests. Try in Ns."), copy-to-clipboard on success with visible failure feedback,
   and the last shortened URL stays on screen.
 
 - **Quality gate (Epic 2)** — kernel test suite with `node --test`
   (`mapApiError`, `session-events`, refresh single-flight coordinator);
   `X-Request-Id` header (UUID per attempt) on every request including refresh,
   carried on `ApiError.requestId` and shown in error UI; `ErrorBoundary` around
-  routes with PT-BR fallback + "Tentar de novo"; `HomePage` now maps API errors
+  routes with English fallback + "Try again"; `HomePage` now maps API errors
   like the other pages; CI runs `npm test` before build.
 
 ### Fixed
@@ -152,7 +155,7 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   first paint, before the `AuthProvider` effect rehydrated it. Bearer mode now
   seeds `user`/`token` state synchronously from `sessionStorage`
   (`useState` lazy initializers); cookie mode gains a `status:
-  "loading" | "ready"` flow — `Private` renders "Carregando" while `/me` is in
+  "loading" | "ready"` flow — `Private` renders "Loading" while `/me` is in
   flight instead of navigating, and a `/me` `404` (endpoint missing) keeps the
   route instead of bouncing. Regression specs added (bearer first-paint without
   login form, cookie loading/no-bounce, `/me` 404).

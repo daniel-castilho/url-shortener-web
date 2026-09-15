@@ -43,6 +43,19 @@ captured verbatim from that spec so the UI layer can mirror the API exactly.
 | POST   | `/api/v1/domains/{host}/verify` | Re-trigger DNS verification |
 | DELETE | `/api/v1/domains/{host}`        | Remove a custom domain      |
 
+### Admin (Epic 10)
+
+Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authenticated non-admin (`USER`) → `403`.
+
+| Method | Path                                        | Summary                             |
+| :----- | :------------------------------------------ | :---------------------------------- |
+| GET    | `/api/v1/admin/users?limit&cursor&q`        | List users (email prefix filter)    |
+| GET    | `/api/v1/admin/users/{userId}/urls`         | List user's links (includes archived) |
+| GET    | `/api/v1/admin/urls?code=`                  | Find link by short code             |
+| POST   | `/api/v1/admin/users/{userId}/block`        | Block a user (idempotent)           |
+| POST   | `/api/v1/admin/users/{userId}/unblock`      | Unblock a user (idempotent)         |
+| DELETE | `/api/v1/admin/urls/{id}`                   | Force-archive any link (idempotent) |
+
 ## Data Types
 
 ### Auth
@@ -64,6 +77,7 @@ captured verbatim from that spec so the UI layer can mirror the API exactly.
   userId: string;
   email: string;
   name: string;
+  role?: "USER" | "ADMIN"; // absent = USER
 }
 ```
 
@@ -174,6 +188,88 @@ Query params: `unit` (`day` rollup or `hour`, bounded raw series max 30 days),
   createdAt: string; // date-time
 }
 ```
+
+### Admin (Epic 10)
+
+`GET /api/v1/admin/users?limit&cursor&q` → `200` `AdminUserListResponse`:
+
+```ts
+{
+  items: AdminUserResponse[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+```
+
+`AdminUserResponse`:
+
+```ts
+{
+  userId: string;
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN"; // live env list, not a stale JWT claim
+  blocked: boolean;
+  createdAt: string; // date-time
+}
+```
+
+Query params: `limit` (max 100), `cursor`, `q` (email prefix filter, not contains). Errors: `401`, `403`.
+
+---
+
+`GET /api/v1/admin/users/{userId}/urls` → `200` `LinkListResponse` (uses existing `ShortUrlResponse` items, includes `deletedAt` for archived links). Errors: `401`, `403`, `404` unknown user.
+
+---
+
+`GET /api/v1/admin/urls?code=` → `200` `AdminUrlResponse`:
+
+```ts
+{
+  id: string;
+  originalUrl: string;
+  shortUrl: string;
+  createdAt: string;         // date-time
+  userId: string | null;
+  isCustomAlias: boolean;
+  clickCount: number;        // int64
+  expiresAt: string | null;  // date-time
+  title: string | null;
+  tags: string[] | null;
+  utm: UtmParamsResponse | null;
+  deletedAt: string | null;  // date-time
+  domain: string | null;
+  ownerUserId: string;
+  ownerEmail: string | null; // may be null
+}
+```
+
+`code` is the short code (document id). Errors: `401`, `403`, `404` unknown code.
+
+---
+
+`POST /api/v1/admin/users/{userId}/block` → `204` (idempotent). Errors: `400` self-block, `401`, `403`, `404` missing user.
+
+---
+
+`POST /api/v1/admin/users/{userId}/unblock` → `204` (idempotent). Errors: `401`, `403`, `404` missing user.
+
+---
+
+`DELETE /api/v1/admin/urls/{id}` → `204` (idempotent; force-archive, evicts cache). Errors: `401`, `403`, `404` missing link.
+
+---
+
+### Block semantics (for existing SPA)
+
+These are documented for the UI; no new pages are implemented in this sync.
+
+- Blocked `POST /api/v1/auth/login` and `POST /api/v1/auth/refresh` → `403` body `"Account blocked."` (not `401`).
+- Authenticated `POST /api/v1/urls` while blocked → `403`.
+- Authenticated `GET /api/v1/urls` while blocked → `200` (read-only access retained).
+- Anonymous `POST /api/v1/urls` remains public.
+
+> Backend references: Java ADR 0011 defines the admin role; `APP_ADMIN_EMAILS` environment variable seeds initial admins. This document only mirrors the wire contract.
 
 ### Redirect
 
