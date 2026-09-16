@@ -135,6 +135,39 @@ export type LinkListResponse = {
   hasMore: boolean;
 };
 
+export type AdminUserResponse = {
+  userId: string;
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN";
+  blocked: boolean;
+  createdAt: string;
+};
+
+export type AdminUserListResponse = {
+  items: AdminUserResponse[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
+export type AdminUrlResponse = {
+  id: string;
+  originalUrl: string;
+  shortUrl: string;
+  createdAt: string;
+  userId: string | null;
+  isCustomAlias: boolean;
+  clickCount: number;
+  expiresAt: string | null;
+  title: string | null;
+  tags: string[] | null;
+  utm: UtmParams | null;
+  deletedAt: string | null;
+  domain: string | null;
+  ownerUserId: string;
+  ownerEmail: string | null;
+};
+
 export type UpdateLinkRequest = {
   originalUrl?: string | null;
   title?: string | null;
@@ -189,6 +222,22 @@ export const api = {
   archiveUrl: (id: string) => request<void>(`/api/v1/urls/${id}`, { method: "DELETE" }),
   getClicks: (id: string) =>
     request<ClickAnalyticsResponse>(`/api/v1/urls/${id}/clicks?unit=day`),
+  adminUsers: (limit = 20, cursor?: string, q?: string) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set("cursor", cursor);
+    if (q) params.set("q", q);
+    return request<AdminUserListResponse>(`/api/v1/admin/users?${params}`);
+  },
+  adminUserUrls: (userId: string) =>
+    request<LinkListResponse>(`/api/v1/admin/users/${userId}/urls`),
+  adminUrlByCode: (code: string) =>
+    request<AdminUrlResponse>(`/api/v1/admin/urls?code=${encodeURIComponent(code)}`),
+  adminBlock: (userId: string) =>
+    request<void>(`/api/v1/admin/users/${userId}/block`, { method: "POST" }),
+  adminUnblock: (userId: string) =>
+    request<void>(`/api/v1/admin/users/${userId}/unblock`, { method: "POST" }),
+  adminForceArchive: (id: string) =>
+    request<void>(`/api/v1/admin/urls/${id}`, { method: "DELETE" }),
 };
 
 export { mapApiError };
