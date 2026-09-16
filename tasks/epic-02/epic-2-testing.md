@@ -29,7 +29,7 @@ Pass: no location.href; header present; boundary present; Home no longer String(
 | Case | Expected |
 | --- | --- |
 | Trigger API 400 on login | Mapped copy + request id visible |
-| Throw in a page (temporary throw) | Fallback, Tentar de novo restores |
+| Throw in a page (temporary throw) | Fallback, Try again restores |
 | Network panel on any api call | Request header X-Request-Id |
 | npm test in CI log | Suite ran, not skipped |
 

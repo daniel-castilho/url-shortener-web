@@ -24,7 +24,7 @@ Minimum new cases: parseRetryAfter("12") === 12; missing/garbage === undefined.
 | Logged in, alias + ttlSeconds | Body JSON has customAlias and ttlSeconds |
 | Invalid url | No fetch |
 | 429 with Retry-After: 7 | Message contains 7 |
-| Copiar | Clipboard has shortUrl or visible failure |
+| Copy | Clipboard has shortUrl or visible failure |
 | Error | id: uuid still shown |
 
 ## 3.4 CI

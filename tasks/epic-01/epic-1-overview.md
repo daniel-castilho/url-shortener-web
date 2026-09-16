@@ -9,7 +9,7 @@
 - src/lib/auth.ts — User + keys us.token, us.refreshToken, us.userId, us.email, us.name
 - src/lib/api.ts — refreshingPromise, skip refresh on login/register/refresh
 - src/context/AuthContext.tsx — AuthProvider, login, logout, rehydrate
-- src/App.tsx — useAuth, Private, Sair calls logout()
+- src/App.tsx — useAuth, Private, Sign out calls logout()
 - Login/Register call login(auth); LinksPage uses mapApiError
 - docs/twelve-factors.md — three auth decisions
 - .github/workflows/ci.yml — npm ci + npm run build

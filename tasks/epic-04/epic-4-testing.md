@@ -18,7 +18,7 @@ No Playwright. Kernel tests only for new pure helpers.
 | Case | Expected |
 | --- | --- |
 | Logged in, no links | Empty copy + link to Home |
-| Enough links for two pages | Mais fetches page 2, page 1 remains |
+| Enough links for two pages | Load more fetches page 2, page 1 remains |
 | Open detail | Fields from GET |
 | PATCH title | List/detail refresh |
 | Archive twice | No crash; list consistent |

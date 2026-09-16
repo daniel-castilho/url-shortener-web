@@ -7,7 +7,7 @@
 
 ## 7.2 Totals
 
-- [ ] LinksPage row: clickCount (label Cliques).
+- [ ] LinksPage row: clickCount (label Clicks).
 - [ ] Detail: same number prominent.
 - [ ] Do not fetch a second endpoint just to re-read clickCount.
 
@@ -15,7 +15,7 @@
 
 - [ ] Add api.* method only if the path exists.
 - [ ] Types copied from the contract, not invented.
-- [ ] Empty series: "Sem cliques no periodo."
+- [ ] Empty series: "No clicks in this period."
 
 ## 7.4 lazy
 

@@ -27,7 +27,7 @@ export default function HomePage() {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!isValidHttpUrl(originalUrl)) {
-      setUrlError("URL inválida. Use http:// ou https://");
+      setUrlError("Invalid URL. Use http:// or https://");
       return;
     }
     setUrlError(null);
@@ -39,7 +39,7 @@ export default function HomePage() {
   }
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <h1 className="text-2xl font-semibold">Encurtar URL</h1>
+      <h1 className="text-2xl font-semibold">Shorten URL</h1>
       <div className="space-y-2">
         <Label htmlFor="originalUrl">URL</Label>
         <Input
@@ -53,10 +53,10 @@ export default function HomePage() {
       </div>
       {isAuthenticated && (
         <div className="space-y-2">
-          <Label htmlFor="customAlias">Alias (opcional)</Label>
+          <Label htmlFor="customAlias">Alias (optional)</Label>
           <Input
             id="customAlias"
-            placeholder="alias opcional"
+            placeholder="optional alias"
             value={customAlias}
             onChange={(e) => setCustomAlias(e.target.value)}
           />
@@ -64,20 +64,20 @@ export default function HomePage() {
       )}
       {isAuthenticated && (
         <div className="space-y-2">
-          <Label htmlFor="ttlSeconds">Expira em (segundos, opcional)</Label>
+          <Label htmlFor="ttlSeconds">Expires in (seconds, optional)</Label>
           <Input
             id="ttlSeconds"
             type="number"
             min={1}
             step={1}
-            placeholder="ttl em segundos"
+            placeholder="ttl in seconds"
             value={ttlSeconds}
             onChange={(e) => setTtlSeconds(e.target.value)}
           />
         </div>
       )}
       <Button type="submit" disabled={shorten.isPending}>
-        Encurtar
+        Shorten
       </Button>
       {urlError && <p className="text-sm text-destructive">{urlError}</p>}
       {shorten.data && (
@@ -85,10 +85,10 @@ export default function HomePage() {
           <p className="break-all text-sm">{shorten.data.shortUrl}</p>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" onClick={() => onCopy(shorten.data.shortUrl)}>
-              Copiar
+              Copy
             </Button>
-            {copyState === "copied" && <span className="text-sm text-muted-foreground">Copiado!</span>}
-            {copyState === "failed" && <span className="text-sm text-destructive">Não foi possível copiar.</span>}
+            {copyState === "copied" && <span className="text-sm text-muted-foreground">Copied!</span>}
+            {copyState === "failed" && <span className="text-sm text-destructive">Failed to copy.</span>}
           </div>
         </div>
       )}

@@ -9,14 +9,14 @@ async function authenticate(page: Page): Promise<void> {
   if (E2E_EMAIL && E2E_PASSWORD) {
     await page.goto("/login");
     await page.getByLabel("Email").fill(E2E_EMAIL);
-    await page.getByLabel("Senha").fill(E2E_PASSWORD);
+    await page.getByLabel("Password").fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "Login" }).click();
   } else {
     await page.goto("/register");
-    await page.getByLabel("Nome").fill("E2E User");
+    await page.getByLabel("Name").fill("E2E User");
     await page.getByLabel("Email").fill(`e2e-${Date.now()}@example.com`);
-    await page.getByLabel("Senha").fill("supersecret123");
-    await page.getByRole("button", { name: "Registrar" }).click();
+    await page.getByLabel("Password").fill("supersecret123");
+    await page.getByRole("button", { name: "Register" }).click();
   }
   await expect(page).toHaveURL(/\/links$/);
 }
@@ -26,8 +26,8 @@ test("happy path: authenticate → shorten → list → detail → archive", asy
 
   await page.goto("/");
   await page.getByLabel("URL").fill(ORIGINAL_URL);
-  await page.getByRole("button", { name: "Encurtar" }).click();
-  await expect(page.getByRole("button", { name: "Copiar" })).toBeVisible();
+  await page.getByRole("button", { name: "Shorten" }).click();
+  await expect(page.getByRole("button", { name: "Copy" })).toBeVisible();
 
   await page.getByRole("link", { name: "Links" }).click();
   const row = page.locator("li").filter({ hasText: ORIGINAL_URL });
@@ -37,8 +37,8 @@ test("happy path: authenticate → shorten → list → detail → archive", asy
   const heading = page.locator("h1, [class*='text-xl']");
   await expect(heading.first()).toBeVisible();
 
-  await page.getByRole("button", { name: "Arquivar", exact: true }).click();
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Arquivar" }).click();
-  await expect(page.getByText("Arquivado.")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Archive" }).click();
+  await expect(page.getByText("Archived.")).toBeVisible();
 });

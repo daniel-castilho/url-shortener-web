@@ -9,7 +9,7 @@ Rule zero — zero-from-memory. Paste outputs. Else Hypothesis (TD-13).
 ```
 359451a docs: epic-3 evidence, changelog, Retry-After contract note
 4616fcc feat(home): copy-to-clipboard with visible failure feedback
-3702cf4 feat(api): parse Retry-After on 429, 'Tente em Ns.' copy
+3702cf4 feat(api): parse Retry-After on 429, 'Try in Ns.' copy
 3dc0844 feat(home): block invalid URL before fetch (isValidHttpUrl)
 b1eeeee feat(home): auth-gated customAlias + optional ttlSeconds
 ```
@@ -26,7 +26,7 @@ b1eeeee feat(home): auth-gated customAlias + optional ttlSeconds
 > url-shortener-web@0.1.0 test
 > node --test 'src/lib/*.test.ts'
 
-✔ mapApiError maps known statuses to PT-BR copy (1.188129ms)
+✔ mapApiError maps known statuses to English copy (1.188129ms)
 ✔ mapApiError falls back to generic copy for other statuses (0.219059ms)
 ✔ mapApiError 429 uses Retry-After seconds when present (0.187328ms)
 ✔ parseRetryAfter returns seconds for numeric headers (0.450189ms)
@@ -119,7 +119,7 @@ Run/sha pair (PR head): run `34802649736` → head `6789626f175a408153ab233f6748
 | Logged in, alias + ttlSeconds | Body JSON has customAlias and ttlSeconds | Hypothesis (TD-13) — backend down |
 | Invalid url | No fetch | Hypothesis (TD-13) — backend down |
 | 429 with Retry-After: 7 | Message contains 7 | Hypothesis (TD-13) — backend down |
-| Copiar | Clipboard has shortUrl or visible failure | Hypothesis (TD-13) — backend down |
+| Copy | Clipboard has shortUrl or visible failure | Hypothesis (TD-13) — backend down |
 | Error | id: uuid still shown | Hypothesis (TD-13) — backend down |
 
 Closure is the owner channel.

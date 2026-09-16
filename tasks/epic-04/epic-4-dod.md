@@ -26,7 +26,7 @@ fcd14dc feat(detail): contract fields + back link + 404 mapping + archive invali
 > url-shortener-web@0.1.0 test
 > node --test 'src/lib/*.test.ts'
 
-✔ mapApiError maps known statuses to PT-BR copy (1.041125ms)
+✔ mapApiError maps known statuses to English copy (1.041125ms)
 ✔ mapApiError falls back to generic copy for other statuses (0.169857ms)
 ✔ mapApiError 429 uses Retry-After seconds when present (0.128665ms)
 ✔ parseRetryAfter returns seconds for numeric headers (0.382776ms)
@@ -121,7 +121,7 @@ Run/sha pair (PR head): run `34803859570` → head `65f59d119cc99adca0918d77907e
 | Case | Expected | Result |
 | --- | --- | --- |
 | Logged in, no links | Empty copy + link to Home | Hypothesis (TD-13) — backend down |
-| Enough links for two pages | Mais fetches page 2, page 1 remains | Hypothesis (TD-13) — backend down |
+| Enough links for two pages | Load more fetches page 2, page 1 remains | Hypothesis (TD-13) — backend down |
 | Open detail | Fields from GET | Hypothesis (TD-13) — backend down |
 | PATCH title | List/detail refresh | Hypothesis (TD-13) — backend down |
 | Archive twice | No crash; list consistent | Hypothesis (TD-13) — backend down |

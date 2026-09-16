@@ -27,14 +27,14 @@ b1a2baa docs: resolve dod evidence sha
 > url-shortener-web@0.1.0 test
 > node --test 'src/lib/*.test.ts'
 
-✔ formatClickCount formats integers with pt-BR grouping (1.108768ms)
+✔ formatClickCount formats integers with locale grouping (1.108768ms)
 ✔ formatClickCount clamps negatives to zero (0.274377ms)
 ✔ formatClickCount handles non-finite values (0.195739ms)
 ✔ toBarPoints returns empty array for empty input (0.181275ms)
 ✔ toBarPoints normalizes clicks to ratio 0..1 (0.283252ms)
 ✔ toBarPoints handles all zeros (0.212301ms)
-✔ toBarPoints formats date labels pt-BR (0.212969ms)
-✔ mapApiError maps known statuses to PT-BR copy (1.108174ms)
+✔ toBarPoints formats date labels locale (0.212969ms)
+✔ mapApiError maps known statuses to English copy (1.108174ms)
 ✔ mapApiError falls back to generic copy for other statuses (0.169857ms)
 ✔ mapApiError 429 uses Retry-After seconds when present (0.187328ms)
 ✔ parseRetryAfter returns seconds for numeric headers (0.382776ms)

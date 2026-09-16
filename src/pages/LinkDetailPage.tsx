@@ -53,9 +53,9 @@ export default function LinkDetailPage() {
       qc.invalidateQueries({ queryKey: ["urls"] });
     },
   });
-  if (q.isPending) return <p>Carregando</p>;
+  if (q.isPending) return <p>Loading</p>;
   if (q.error) return <ApiErrorMessage error={q.error} />;
-  if (!q.data) return <p>Link nao encontrado.</p>;
+  if (!q.data) return <p>Link not found.</p>;
   const link = q.data;
   function onEditSubmit(e: FormEvent) {
     e.preventDefault();
@@ -72,24 +72,24 @@ export default function LinkDetailPage() {
     if (Object.keys(patch).length > 0) update.mutate(patch);
   }
   const fields: Array<[string, string]> = [
-    ["URL original", link.originalUrl],
-    ["cliques", String(link.clickCount)],
-    ["criado em", link.createdAt],
+    ["Original URL", link.originalUrl],
+    ["Clicks", String(link.clickCount)],
+    ["Created at", link.createdAt],
   ];
-  if (link.title) fields.push(["título", link.title]);
-  if (link.tags && link.tags.length > 0) fields.push(["tags", link.tags.join(", ")]);
-  if (link.expiresAt) fields.push(["expira em", link.expiresAt]);
+  if (link.title) fields.push(["Title", link.title]);
+  if (link.tags && link.tags.length > 0) fields.push(["Tags", link.tags.join(", ")]);
+  if (link.expiresAt) fields.push(["Expires at", link.expiresAt]);
   return (
     <div className="space-y-4">
       <Link className="text-sm underline underline-offset-4" to="/links">
-        ← Voltar aos links
+        ← Back to links
       </Link>
       <Card>
         <CardHeader className="px-4 [.border-b]:pb-4">
           <CardTitle className="break-all text-xl">{link.shortUrl}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            id: {link.id}
-            {link.deletedAt ? " — arquivado" : ""}
+            ID: {link.id}
+            {link.deletedAt ? " — archived" : ""}
           </p>
         </CardHeader>
         <CardContent className="px-4">
@@ -104,7 +104,7 @@ export default function LinkDetailPage() {
           <div className="mt-4 space-y-1">
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={() => setEditOpen(true)} disabled={!!link.deletedAt}>
-                Editar
+                Edit
               </Button>
               <Button
                 type="button"
@@ -112,12 +112,12 @@ export default function LinkDetailPage() {
                 onClick={() => setConfirmArchive(true)}
                 disabled={!!link.deletedAt || archive.isPending}
               >
-                Arquivar
+                Archive
               </Button>
             </div>
-            {update.isSuccess && !editOpen && <p className="text-sm text-muted-foreground">Salvo.</p>}
+            {update.isSuccess && !editOpen && <p className="text-sm text-muted-foreground">Saved.</p>}
             {archive.isSuccess && !archive.isPending && (
-              <p className="text-sm text-muted-foreground">Arquivado.</p>
+              <p className="text-sm text-muted-foreground">Archived.</p>
             )}
             {archive.error && <ApiErrorMessage error={archive.error} />}
           </div>
@@ -126,14 +126,14 @@ export default function LinkDetailPage() {
       <Dialog open={confirmArchive} onOpenChange={setConfirmArchive}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Arquivar este link?</DialogTitle>
+            <DialogTitle>Archive this link?</DialogTitle>
             <DialogDescription>
-              O link {link.id} deixa de ser editável. Esta ação não pode ser desfeita.
+              The link {link.id} will no longer be editable. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setConfirmArchive(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="button"
@@ -142,25 +142,25 @@ export default function LinkDetailPage() {
                 archive.mutate();
               }}
             >
-              Arquivar
+              Archive
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       {editOpen && (
         <form onSubmit={onEditSubmit} className="space-y-3">
-          <h2 className="text-lg font-semibold">Editar</h2>
+          <h2 className="text-lg font-semibold">Edit</h2>
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Título</Label>
+            <Label htmlFor="edit-title">Title</Label>
             <Input
               id="edit-title"
-              placeholder="título"
+              placeholder="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-tags">Tags (separadas por vírgula)</Label>
+            <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
             <Input
               id="edit-tags"
               placeholder="promo, site_1"
@@ -210,7 +210,7 @@ export default function LinkDetailPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-expires-at">Expira em (date-time)</Label>
+              <Label htmlFor="edit-expires-at">Expires at (date-time)</Label>
               <Input
                 id="edit-expires-at"
                 placeholder="2026-12-31T23:59:59Z"
@@ -221,10 +221,10 @@ export default function LinkDetailPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={update.isPending}>
-              Salvar
+              Save
             </Button>
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
           </div>
           {update.error && <ApiErrorMessage error={update.error} />}
@@ -232,13 +232,13 @@ export default function LinkDetailPage() {
       )}
       <Card className="mt-4">
         <CardHeader className="px-4 [.border-b]:pb-4">
-          <CardTitle className="text-lg font-semibold">Análise de cliques</CardTitle>
+          <CardTitle className="text-lg font-semibold">Click analysis</CardTitle>
         </CardHeader>
         <CardContent className="px-4">
-          {clicks.isPending && <p className="text-sm text-muted-foreground">Carregando análise...</p>}
+          {clicks.isPending && <p className="text-sm text-muted-foreground">Loading analysis...</p>}
           {clicks.error && <ApiErrorMessage error={clicks.error} />}
           {clicks.data && (
-            <Suspense fallback={<p className="text-sm text-muted-foreground">Carregando gráfico...</p>}>
+            <Suspense fallback={<p className="text-sm text-muted-foreground">Loading chart...</p>}>
               <ClicksChart series={clicks.data.series} totalClicks={clicks.data.totalClicks} />
             </Suspense>
           )}

@@ -7,7 +7,7 @@ import { renderWithProviders } from "@/test/render";
 import { server } from "@/test/setup";
 
 describe("LinksPage", () => {
-  it("estado vazio mostra a cópia e o link para a home", async () => {
+  it("empty state shows copy and link to home", async () => {
     server.use(
       http.get("/api/v1/urls", () =>
         HttpResponse.json({ items: [], nextCursor: null, hasMore: false }),
@@ -16,19 +16,19 @@ describe("LinksPage", () => {
 
     renderWithProviders(<LinksPage />);
 
-    expect(await screen.findByText("Nenhum link ainda.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Encurtar uma URL" })).toBeInTheDocument();
+    expect(await screen.findByText("No links yet.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Shorten a URL" })).toBeInTheDocument();
   });
 
-  it("lista links e carrega mais quando hasMore", async () => {
+  it("lists links and loads more when hasMore", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LinksPage />);
 
     expect(await screen.findByRole("link", { name: "abc123" })).toBeInTheDocument();
     expect(screen.getByText("https://example.com")).toBeInTheDocument();
-    expect(screen.getByText(/cliques: 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Clicks: 5/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Mais" }));
+    await user.click(screen.getByRole("button", { name: "Load more" }));
 
     expect(await screen.findByText("https://second.example")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Mais" })).not.toBeInTheDocument();

@@ -7,23 +7,23 @@ import { renderWithProviders } from "@/test/render";
 
 function HydrationProbe() {
   const { user, isAuthenticated } = useAuth();
-  return <p>{isAuthenticated ? `Olá, ${user?.name}` : "anonimo"}</p>;
+  return <p>{isAuthenticated ? `Hello, ${user?.name}` : "anonymous"}</p>;
 }
 
 describe("LoginPage", () => {
-  it("401 mostra a cópia mapeada com o id do request", async () => {
+  it("401 shows mapped copy with request id", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginPage />);
 
     await user.type(screen.getByLabelText("Email"), "fail@example.com");
-    await user.type(screen.getByLabelText("Senha"), "supersecret");
+    await user.type(screen.getByLabelText("Password"), "supersecret");
     await user.click(screen.getByRole("button", { name: "Login" }));
 
-    expect(await screen.findByText("Sessão expirada.")).toBeInTheDocument();
+    expect(await screen.findByText("Session expired.")).toBeInTheDocument();
     expect(screen.getByText(/^id: /)).toBeInTheDocument();
   });
 
-  it("200 hidrata o usuário e navega", async () => {
+  it("200 hydrates user and navigates", async () => {
     const user = userEvent.setup();
     renderWithProviders(
       <>
@@ -33,9 +33,9 @@ describe("LoginPage", () => {
     );
 
     await user.type(screen.getByLabelText("Email"), "test@example.com");
-    await user.type(screen.getByLabelText("Senha"), "supersecret");
+    await user.type(screen.getByLabelText("Password"), "supersecret");
     await user.click(screen.getByRole("button", { name: "Login" }));
 
-    expect(await screen.findByText("Olá, Test User")).toBeInTheDocument();
+    expect(await screen.findByText("Hello, Test User")).toBeInTheDocument();
   });
 });
