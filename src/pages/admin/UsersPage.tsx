@@ -7,10 +7,14 @@ import { EmptyState } from "@/components/EmptyState";
 import { ApiErrorMessage } from "@/components/ApiErrorMessage";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { type AdminUserResponse } from "@/lib/api";
 
 export default function UsersPage() {
+  const { user } = useAuth();
+  const currentUserId = user?.userId;
   const q = useInfiniteQuery({
     queryKey: ["admin", "users"],
     queryFn: ({ pageParam }) => api.adminUsers(20, pageParam),
@@ -24,6 +28,25 @@ export default function UsersPage() {
     queryFn: () => api.adminUrlByCode(code),
     enabled: code.length > 0,
   });
+
+  const [blockTarget, setBlockTarget] = useState<string | null>(null);
+  const [unblockTarget, setUnblockTarget] = useState<string | null>(null);
+
+  const handleBlock = () => {
+    if (blockTarget) {
+      api.adminBlock(blockTarget);
+      setBlockTarget(null);
+      q.refetch();
+    }
+  };
+
+  const handleUnblock = () => {
+    if (unblockTarget) {
+      api.adminUnblock(unblockTarget);
+      setUnblockTarget(null);
+      q.refetch();
+    }
+  };
 
   if (q.isPending) return <p>Loading</p>;
   if (q.error) return <ApiErrorMessage error={q.error} />;
@@ -68,28 +91,51 @@ export default function UsersPage() {
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-muted-foreground border-b">
-                <div className="col-span-4">Email</div>
+                <div className="col-span-3">Email</div>
                 <div className="col-span-2">Name</div>
                 <div className="col-span-2">Role</div>
                 <div className="col-span-2">Status</div>
                 <div className="col-span-2">Created</div>
+                <div className="col-span-1">Actions</div>
               </div>
-              {items.map((user: AdminUserResponse) => (
-                <Link key={user.userId} to={`/admin/users/${user.userId}`} className="grid grid-cols-12 gap-4 px-4 py-3 text-sm border-b hover:bg-muted/50">
-                  <div className="col-span-4 truncate">{user.email}</div>
-                  <div className="col-span-2 truncate">{user.name}</div>
+              {items.map((u: AdminUserResponse) => (
+                <div key={u.userId} className="grid grid-cols-12 gap-4 px-4 py-3 text-sm border-b hover:bg-muted/50">
+                  <Link to={`/admin/users/${u.userId}`} className="col-span-3 truncate">{u.email}</Link>
+                  <div className="col-span-2 truncate">{u.name}</div>
                   <div className="col-span-2">
-                    <span className={user.role === "ADMIN" ? "text-primary" : "text-muted-foreground"}>
-                      {user.role}
+                    <span className={u.role === "ADMIN" ? "text-primary" : "text-muted-foreground"}>
+                      {u.role}
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <span className={user.blocked ? "text-destructive" : "text-green-600"}>
-                      {user.blocked ? "Blocked" : "Active"}
+                    <span className={u.blocked ? "text-destructive" : "text-green-600"}>
+                      {u.blocked ? "Blocked" : "Active"}
                     </span>
                   </div>
-                  <div className="col-span-2 text-muted-foreground">{user.createdAt}</div>
-                </Link>
+                  <div className="col-span-2 text-muted-foreground">{u.createdAt}</div>
+                  <div className="col-span-1 flex items-center gap-2">
+                    {u.userId !== currentUserId && u.blocked && (
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="h-8 px-3 text-xs"
+                        onClick={() => setUnblockTarget(u.userId)}
+                      >
+                        Unblock
+                      </Button>
+                    )}
+                    {u.userId !== currentUserId && !u.blocked && (
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-8 px-3 text-xs"
+                        onClick={() => setBlockTarget(u.userId)}
+                      >
+                        Block
+                      </Button>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -106,6 +152,42 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={!!blockTarget} onOpenChange={() => setBlockTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Block this user?</DialogTitle>
+            <DialogDescription>
+              The user will not be able to log in or create new links.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setBlockTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="default" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={handleBlock}>
+              Block
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!unblockTarget} onOpenChange={() => setUnblockTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unblock this user?</DialogTitle>
+            <DialogDescription>
+              The user will be able to log in and create links again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setUnblockTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleUnblock}>
+              Unblock
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
