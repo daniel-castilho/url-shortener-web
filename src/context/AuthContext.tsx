@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rehydratingRef.current = true;
       api.me()
         .then((me: UserResponse) => {
-          const newUser: User = { userId: me.userId, email: me.email, name: me.name };
+          const newUser: User = { userId: me.userId, email: me.email, name: me.name, role: me.role };
           setUser(newUser);
           setUserState(newUser);
         })
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (auth: AuthResponse) => {
     setSession(auth.token, auth.refreshToken);
-    const newUser = { userId: auth.userId, email: auth.email, name: auth.name };
+    const newUser = { userId: auth.userId, email: auth.email, name: auth.name, role: auth.role };
     setUser(newUser);
     setTokenState(auth.token);
     setUserState(newUser);

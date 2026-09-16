@@ -10,6 +10,7 @@ export type User = {
   userId: string;
   email: string;
   name: string;
+  role?: "USER" | "ADMIN";
 };
 
 export function getToken(): string | null {
@@ -26,8 +27,9 @@ export function getUser(): User | null {
   const userId = sessionStorage.getItem(USER_ID);
   const email = sessionStorage.getItem(USER_EMAIL);
   const name = sessionStorage.getItem(USER_NAME);
+  const role = sessionStorage.getItem("us.role") as "USER" | "ADMIN" | null;
   if (!userId || !email || !name) return null;
-  return { userId, email, name };
+  return { userId, email, name, role: role ?? undefined };
 }
 
 export function setSession(token: string, refreshToken: string): void {
@@ -40,6 +42,7 @@ export function setUser(user: User): void {
   sessionStorage.setItem(USER_ID, user.userId);
   sessionStorage.setItem(USER_EMAIL, user.email);
   sessionStorage.setItem(USER_NAME, user.name);
+  if (user.role) sessionStorage.setItem("us.role", user.role);
 }
 
 export function clearSession(): void {
@@ -51,4 +54,5 @@ export function clearUser(): void {
   sessionStorage.removeItem(USER_ID);
   sessionStorage.removeItem(USER_EMAIL);
   sessionStorage.removeItem(USER_NAME);
+  sessionStorage.removeItem("us.role");
 }
