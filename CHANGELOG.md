@@ -8,6 +8,17 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Added
+
+- **Admin dashboard (Epic 13)** — full admin UI for the six service Epic 10 endpoints:
+  - `PrivateAdmin` guard (USER → /, anonymous → /login); Nav "Admin" link only for ADMIN role
+  - `/admin/users` — cursor-paginated grid with email-prefix filter (q), columns: email, name, role, status, createdAt
+  - `/admin/users/:userId` — that user's links (archived visible via deletedAt), force-archive Dialog
+  - Code search field → `GET /api/v1/admin/urls?code=` → owner email + link fields; 404 mapped
+  - Block/unblock Dialogs (204 idempotent); self-block disabled (400); unblock symmetric
+  - `mapApiError`: 403 on login/refresh/shorten → "Account blocked." when body contains "Account blocked"
+- **MSW handlers + integration specs** for admin endpoints, PrivateAdmin, block 403 copy, prefix q filter
+
 ### Changed
 
 - **API contract sync (service Epic 10)** — `docs/api-contract.md` refreshed from the Java OpenAPI spec. `AuthResponse` and `UserResponse` now include optional `role: "USER" | "ADMIN"` (absent = USER). Added Admin endpoints section (six routes: list users with cursor/email-prefix filter, list user's links including archived, find link by short code with owner info, block/unblock user, force-archive link). Documented block semantics for existing SPA (blocked login/refresh → 403 "Account blocked.", blocked POST /urls → 403, blocked GET /urls → 200). Cited Java ADR 0011 and `APP_ADMIN_EMAILS` as backend pointers. No `/admin` UI added; no new pages; `VITE_AUTH_MODE` unchanged.
