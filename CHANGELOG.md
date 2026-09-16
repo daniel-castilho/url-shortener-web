@@ -8,6 +8,8 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-16
+
 ### Added
 
 - **Admin dashboard (Epic 13)** — full admin UI for the six service Epic 10 endpoints:
