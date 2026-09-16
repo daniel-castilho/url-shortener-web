@@ -17,6 +17,14 @@ export function Private({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+export function PrivateAdmin({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, status, pendingLogout, user } = useAuth();
+  if (status === "loading" || pendingLogout) return <p>Loading</p>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "ADMIN") return <Navigate to="/" replace />;
+  return children;
+}
+
 function Nav() {
   const { user, isAuthenticated, logout } = useAuth();
   return (
@@ -29,6 +37,11 @@ function Nav() {
           <Link to="/links" className="underline-offset-4 hover:underline">
             Links
           </Link>
+          {user?.role === "ADMIN" && (
+            <Link to="/admin/users" className="underline-offset-4 hover:underline">
+              Admin
+            </Link>
+          )}
           <span className="ml-auto text-muted-foreground">Hello, {user?.name}</span>
           <button
             type="button"
@@ -72,6 +85,14 @@ function AppRoutes() {
           <Private>
             <LinkDetailPage />
           </Private>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <PrivateAdmin>
+            <div>Admin Users</div>
+          </PrivateAdmin>
         }
       />
     </Routes>
