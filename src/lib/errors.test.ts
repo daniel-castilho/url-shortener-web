@@ -6,9 +6,10 @@ test("mapApiError maps known statuses to English copy", () => {
   assert.equal(mapApiError(400), "Invalid data.");
   assert.equal(mapApiError(401), "Session expired.");
   assert.equal(mapApiError(403), "You are not the owner of this link.");
+  assert.equal(mapApiError(403, "Account blocked."), "Account blocked.");
   assert.equal(mapApiError(404), "Link not found.");
   assert.equal(mapApiError(409), "This alias already exists.");
-  assert.equal(mapApiError(429), "Too many requests. Please wait a moment.");
+  assert.equal(mapApiError(429, undefined, undefined), "Too many requests. Please wait a moment.");
 });
 
 test("mapApiError falls back to generic copy for other statuses", () => {
@@ -17,8 +18,8 @@ test("mapApiError falls back to generic copy for other statuses", () => {
 });
 
 test("mapApiError 429 uses Retry-After seconds when present", () => {
-  assert.equal(mapApiError(429, 7), "Too many requests. Try in 7s.");
-  assert.equal(mapApiError(429, 0), "Too many requests. Try in 0s.");
+  assert.equal(mapApiError(429, undefined, 7), "Too many requests. Try in 7s.");
+  assert.equal(mapApiError(429, undefined, 0), "Too many requests. Try in 0s.");
 });
 
 test("parseRetryAfter returns seconds for numeric headers", () => {

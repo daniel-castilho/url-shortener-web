@@ -1,10 +1,11 @@
-export function mapApiError(status: number, retryAfterSec?: number): string {
+export function mapApiError(status: number, body?: string, retryAfterSec?: number): string {
   switch (status) {
     case 400:
       return "Invalid data.";
     case 401:
       return "Session expired.";
     case 403:
+      if (body && body.includes("Account blocked")) return "Account blocked.";
       return "You are not the owner of this link.";
     case 404:
       return "Link not found.";

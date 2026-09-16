@@ -13,12 +13,14 @@ export class ApiError extends Error {
   status: number;
   requestId?: string;
   retryAfterSec?: number;
+  body?: string;
 
-  constructor(status: number, message: string, requestId?: string, retryAfterSec?: number) {
+  constructor(status: number, message: string, requestId?: string, retryAfterSec?: number, body?: string) {
     super(message);
     this.status = status;
     this.requestId = requestId;
     this.retryAfterSec = retryAfterSec;
+    this.body = body;
   }
 }
 
@@ -74,7 +76,8 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   }
   if (!res.ok) {
     const retryAfterSec = res.status === 429 ? parseRetryAfter(res.headers.get("Retry-After")) : undefined;
-    throw new ApiError(res.status, await res.text(), requestId, retryAfterSec);
+    const body = await res.text();
+    throw new ApiError(res.status, body, requestId, retryAfterSec, body);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
