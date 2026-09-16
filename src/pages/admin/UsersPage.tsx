@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,7 @@ export default function UsersPage() {
                 <div className="col-span-2">Created</div>
               </div>
               {items.map((user: AdminUserResponse) => (
-                <div key={user.userId} className="grid grid-cols-12 gap-4 px-4 py-3 text-sm border-b">
+                <Link key={user.userId} to={`/admin/users/${user.userId}`} className="grid grid-cols-12 gap-4 px-4 py-3 text-sm border-b hover:bg-muted/50">
                   <div className="col-span-4 truncate">{user.email}</div>
                   <div className="col-span-2 truncate">{user.name}</div>
                   <div className="col-span-2">
@@ -52,7 +53,7 @@ export default function UsersPage() {
                     </span>
                   </div>
                   <div className="col-span-2 text-muted-foreground">{user.createdAt}</div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
