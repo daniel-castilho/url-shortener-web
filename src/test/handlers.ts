@@ -16,6 +16,33 @@ type LinkResponse = {
   domain: string | null;
 };
 
+type AdminUserResponse = {
+  userId: string;
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN";
+  blocked: boolean;
+  createdAt: string;
+};
+
+type AdminUrlResponse = {
+  id: string;
+  originalUrl: string;
+  shortUrl: string;
+  createdAt: string;
+  userId: string | null;
+  isCustomAlias: boolean;
+  clickCount: number;
+  expiresAt: string | null;
+  title: string | null;
+  tags: string[] | null;
+  utm: Record<string, string> | null;
+  deletedAt: string | null;
+  domain: string | null;
+  ownerUserId: string;
+  ownerEmail: string | null;
+};
+
 export function makeLink(overrides: Partial<LinkResponse> = {}): LinkResponse {
   const id = overrides.id ?? "abc123";
   return {
@@ -36,11 +63,47 @@ export function makeLink(overrides: Partial<LinkResponse> = {}): LinkResponse {
   };
 }
 
+export function makeAdminUser(overrides: Partial<AdminUserResponse> = {}): AdminUserResponse {
+  return {
+    userId: "2",
+    email: "user@example.com",
+    name: "Regular User",
+    role: "USER",
+    blocked: false,
+    createdAt: "2026-09-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+export function makeAdminUrl(overrides: Partial<AdminUrlResponse> = {}): AdminUrlResponse {
+  return {
+    id: "abc123",
+    originalUrl: "https://example.com",
+    shortUrl: "https://tyny.url/abc123",
+    createdAt: "2026-09-01T00:00:00Z",
+    userId: "1",
+    isCustomAlias: false,
+    clickCount: 5,
+    expiresAt: null,
+    title: "Test Link",
+    tags: ["tag1"],
+    utm: null,
+    deletedAt: null,
+    domain: null,
+    ownerUserId: "1",
+    ownerEmail: "owner@example.com",
+    ...overrides,
+  };
+}
+
 export const handlers = [
   http.post("/api/v1/auth/login", async ({ request }) => {
     const body = (await request.json()) as { email?: string };
     if (body.email === "fail@example.com") {
       return HttpResponse.json({ message: "Invalid credentials" }, { status: 401 });
+    }
+    if (body.email === "blocked@example.com") {
+      return HttpResponse.json({ message: "Account blocked." }, { status: 403 });
     }
     return HttpResponse.json(
       {
@@ -49,6 +112,7 @@ export const handlers = [
         userId: "1",
         email: body.email ?? "test@example.com",
         name: "Test User",
+        role: "ADMIN",
       },
       { status: 200 },
     );
@@ -70,7 +134,7 @@ export const handlers = [
       });
     }
     if (!originalUrl.startsWith("http")) {
-      return HttpResponse.json({ message: "Dados inválidos." }, { status: 400 });
+      return HttpResponse.json({ message: "Invalid data." }, { status: 400 });
     }
     return HttpResponse.json(
       { id: "abc123", shortUrl: "https://tyny.url/abc123" },
@@ -121,4 +185,55 @@ export const handlers = [
       uniquePerBucket: {},
     }),
   ),
+
+  // Admin endpoints
+  http.get("/api/v1/admin/users", ({ request }) => {
+    const url = new URL(request.url);
+    const cursor = url.searchParams.get("cursor");
+    const q = url.searchParams.get("q");
+    const users = [makeAdminUser(), makeAdminUser({ userId: "3", email: "another@example.com", name: "Another User" })];
+    if (q) {
+      return HttpResponse.json({
+        items: users.filter(u => u.email.startsWith(q)),
+        nextCursor: null,
+        hasMore: false,
+      });
+    }
+    if (cursor) {
+      return HttpResponse.json({
+        items: [],
+        nextCursor: null,
+        hasMore: false,
+      });
+    }
+    return HttpResponse.json({
+      items: users,
+      nextCursor: "next-cursor",
+      hasMore: true,
+    });
+  }),
+
+  http.get("/api/v1/admin/users/:userId/urls", ({ params }) =>
+    HttpResponse.json({
+      items: [
+        makeLink({ id: "link1", userId: String(params.userId) }),
+        makeLink({ id: "link2", userId: String(params.userId), deletedAt: "2026-09-15T00:00:00Z" }),
+      ],
+      nextCursor: null,
+      hasMore: false,
+    }),
+  ),
+
+  http.get("/api/v1/admin/urls", ({ request }) => {
+    const url = new URL(request.url);
+    const code = url.searchParams.get("code");
+    if (code) {
+      return HttpResponse.json(makeAdminUrl({ shortUrl: `https://tyny.url/${code}`, ownerUserId: "1", ownerEmail: "owner@example.com" }));
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.post("/api/v1/admin/users/:userId/block", () => new HttpResponse(null, { status: 204 })),
+  http.post("/api/v1/admin/users/:userId/unblock", () => new HttpResponse(null, { status: 204 })),
+  http.delete("/api/v1/admin/urls/:id", () => new HttpResponse(null, { status: 204 })),
 ];
