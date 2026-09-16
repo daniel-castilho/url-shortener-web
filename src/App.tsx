@@ -7,6 +7,7 @@ import RegisterPage from "@/pages/RegisterPage";
 import LinksPage from "@/pages/LinksPage";
 import LinkDetailPage from "@/pages/LinkDetailPage";
 import UsersPage from "@/pages/admin/UsersPage";
+import UserLinksPage from "@/pages/admin/UserLinksPage";
 
 export function Private({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, status, pendingLogout } = useAuth();
@@ -93,6 +94,14 @@ function AppRoutes() {
         element={
           <PrivateAdmin>
             <UsersPage />
+          </PrivateAdmin>
+        }
+      />
+      <Route
+        path="/admin/users/:userId"
+        element={
+          <PrivateAdmin>
+            <UserLinksPage />
           </PrivateAdmin>
         }
       />
