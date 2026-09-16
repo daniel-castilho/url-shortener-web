@@ -86,12 +86,14 @@ export type AuthResponse = {
   userId: string;
   email: string;
   name: string;
+  role?: "USER" | "ADMIN";
 };
 
 export type UserResponse = {
   userId: string;
   email: string;
   name: string;
+  role?: "USER" | "ADMIN";
 };
 
 export type ShortenRequest = {
