@@ -10,6 +10,11 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ### Added
 
+- Alias max length validation: the custom alias field on the shorten form now
+  enforces a 64-character limit (maxLength=64, client-side validation with
+  clear error message) aligned with the backend contract. Empty alias continues
+  to be omitted from the payload.
+
 - Live admin e2e probe (`e2e/admin-probe.spec.ts`, opt-in via
   `E2E_EMAIL`/`E2E_PASSWORD` + `APP_ADMIN_EMAILS` on the service): seeds users
   over the REST API and proves the admin flows against a real backend — users

@@ -1,5 +1,16 @@
 import { http, HttpResponse } from "msw";
 
+// Test helper to capture the last shorten request body
+let lastShortenRequest: Record<string, unknown> | null = null;
+
+export function getLastShortenRequest(): Record<string, unknown> | null {
+  return lastShortenRequest;
+}
+
+export function resetLastShortenRequest(): void {
+  lastShortenRequest = null;
+}
+
 type LinkResponse = {
   id: string;
   originalUrl: string;
@@ -102,8 +113,9 @@ export const handlers = [
   http.post("/api/v1/auth/refresh", () => new HttpResponse(null, { status: 401 })),
 
   http.post("/api/v1/urls", async ({ request }) => {
-    const body = (await request.json()) as { originalUrl?: string };
-    const originalUrl = body.originalUrl ?? "";
+    const body = (await request.json()) as Record<string, unknown>;
+    lastShortenRequest = body;
+    const originalUrl = (body.originalUrl as string) ?? "";
     if (originalUrl.includes("ratelimit")) {
       return new HttpResponse(null, {
         status: 429,

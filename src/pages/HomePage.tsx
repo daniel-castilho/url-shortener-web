@@ -14,6 +14,7 @@ export default function HomePage() {
   const [customAlias, setCustomAlias] = useState("");
   const [ttlSeconds, setTtlSeconds] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [aliasError, setAliasError] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const shorten = useMutation({ mutationFn: api.shorten });
   async function onCopy(shortUrl: string) {
@@ -26,8 +27,13 @@ export default function HomePage() {
   }
   function onSubmit(e: FormEvent) {
     e.preventDefault();
+    setAliasError(null);
     if (!isValidHttpUrl(originalUrl)) {
       setUrlError("Invalid URL. Use http:// or https://");
+      return;
+    }
+    if (customAlias.length > 64) {
+      setAliasError("Alias must be at most 64 characters.");
       return;
     }
     setUrlError(null);
@@ -53,13 +59,15 @@ export default function HomePage() {
       </div>
       {isAuthenticated && (
         <div className="space-y-2">
-          <Label htmlFor="customAlias">Alias (optional)</Label>
+          <Label htmlFor="customAlias">Alias (optional, max 64 characters)</Label>
           <Input
             id="customAlias"
             placeholder="optional alias"
             value={customAlias}
             onChange={(e) => setCustomAlias(e.target.value)}
+            maxLength={64}
           />
+          {aliasError && <p className="text-sm text-destructive">{aliasError}</p>}
         </div>
       )}
       {isAuthenticated && (

@@ -88,7 +88,7 @@ Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authentic
 ```ts
 {
   originalUrl: string;   // pattern ^https?://.*
-  customAlias?: string;  // pattern ^[a-zA-Z0-9-_]*$
+  customAlias?: string;  // pattern ^[a-zA-Z0-9-_]*$, maxLength 64
   ttlSeconds?: number;   // int64, exclusiveMinimum 0
   domain?: string;       // DNS hostname pattern
 }
@@ -103,8 +103,8 @@ Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authentic
 }
 ```
 
-Also documented: `400` invalid URL or custom alias, `409` custom alias in use,
-`429` rate limit exceeded.
+Also documented: `400` invalid URL or custom alias (including exceeding 64 characters),
+`409` custom alias in use, `429` rate limit exceeded.
 
 ### Links (list / detail / update)
 
