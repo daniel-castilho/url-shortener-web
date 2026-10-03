@@ -9,5 +9,20 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.spec.tsx"],
     setupFiles: ["./src/test/setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.spec.tsx",
+        "src/**/*.test.ts",
+        "src/test/**/*",
+        "src/**/index.{ts,tsx}",
+        "src/main.tsx",
+        "src/vite-env.d.ts",
+        "src/App.tsx",
+      ],
+      reporter: ["text", "json", "html", "lcov"],
+      reportsDirectory: "./coverage",
+    },
   },
 });
