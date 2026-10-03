@@ -84,6 +84,21 @@ export function makeAdminUrl(
   };
 }
 
+// In-memory state for auth simulation
+let authState = {
+  isAuthenticated: false,
+  isBlocked: false,
+  hasRefreshToken: true,
+};
+
+export function setAuthState(state: Partial<typeof authState>): void {
+  authState = { ...authState, ...state };
+}
+
+export function resetAuthState(): void {
+  authState = { isAuthenticated: false, isBlocked: false, hasRefreshToken: true };
+}
+
 export const handlers = [
   http.post("/api/v1/auth/login", async ({ request }) => {
     const body = (await request.json()) as { email?: string };
@@ -92,6 +107,12 @@ export const handlers = [
     }
     if (body.email === "blocked@example.com") {
       return HttpResponse.json({ message: "Account blocked." }, { status: 403 });
+    }
+    if (body.email === "ratelimit@example.com") {
+      return new HttpResponse(null, {
+        status: 429,
+        headers: { "Retry-After": "5" },
+      });
     }
     return HttpResponse.json(
       {
@@ -106,11 +127,58 @@ export const handlers = [
     );
   }),
 
-  http.get("/api/v1/auth/me", () => new HttpResponse(null, { status: 401 })),
+  http.post("/api/v1/auth/register", async ({ request }) => {
+    const body = (await request.json()) as { email?: string };
+    if (body.email === "ratelimit@example.com") {
+      return new HttpResponse(null, {
+        status: 429,
+        headers: { "Retry-After": "5" },
+      });
+    }
+    return HttpResponse.json(
+      {
+        token: "access-token",
+        refreshToken: "refresh-token",
+        userId: "1",
+        email: body.email ?? "test@example.com",
+        name: "Test User",
+      },
+      { status: 200 },
+    );
+  }),
 
-  http.post("/api/v1/auth/logout", () => new HttpResponse(null, { status: 204 })),
+  http.get("/api/v1/auth/me", () => {
+    if (!authState.isAuthenticated) {
+      return new HttpResponse(null, { status: 401 });
+    }
+    return HttpResponse.json(
+      { userId: "1", email: "test@example.com", name: "Test User", role: "USER" },
+      { status: 200 },
+    );
+  }),
 
-  http.post("/api/v1/auth/refresh", () => new HttpResponse(null, { status: 401 })),
+  http.post("/api/v1/auth/logout", () => {
+    resetAuthState();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post("/api/v1/auth/refresh", () => {
+    if (!authState.hasRefreshToken) {
+      // Refresh failure = hard logout: clear cookies via 401
+      return new HttpResponse(null, { status: 401 });
+    }
+    return HttpResponse.json(
+      {
+        token: "new-access-token",
+        refreshToken: "new-refresh-token",
+        userId: "1",
+        email: "test@example.com",
+        name: "Test User",
+        role: "USER",
+      },
+      { status: 200 },
+    );
+  }),
 
   http.post("/api/v1/urls", async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
@@ -124,6 +192,10 @@ export const handlers = [
     }
     if (!originalUrl.startsWith("http")) {
       return HttpResponse.json({ message: "Invalid data." }, { status: 400 });
+    }
+    const customAlias = body.customAlias as string | undefined;
+    if (customAlias && customAlias.length > 64) {
+      return HttpResponse.json({ message: "Custom alias must be at most 64 characters." }, { status: 400 });
     }
     return HttpResponse.json(
       { id: "abc123", shortUrl: "https://tyny.url/abc123" },
@@ -172,6 +244,17 @@ export const handlers = [
       ],
       breakdown: {},
       uniquePerBucket: {},
+    }),
+  ),
+
+  // Version endpoint
+  http.get("/actuator/info", () =>
+    HttpResponse.json({
+      build: {
+        artifact: "url-shortener-service",
+        version: "0.3.0",
+        time: "2026-10-03T00:00:00Z",
+      },
     }),
   ),
 

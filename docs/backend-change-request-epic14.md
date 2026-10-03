@@ -4,199 +4,105 @@
 **To:** url-shortener-service team (Backend) / DevOps  
 **Date:** 2026-10-03  
 **Epic:** 14 — Frontend Testing Excellence and Confidence  
-**Baseline SHA:** e137257 (main)
+**Baseline SHA:** 06fee1c (main)
 
 ---
 
 ## Summary
 
-Epic 14 establishes systematic test gates, measurement, accessibility, security, mutation testing, and safe-environment policies for the frontend. Several stories require backend coordination or new capabilities. This document formalizes those requests with technical justification.
+Epic 14 establishes systematic test gates, measurement, accessibility, security, mutation testing, and safe-environment policies for the frontend. Several stories required backend coordination or new capabilities. This document formalized those requests with technical justification.
 
 ---
 
-## Request 1: Cookie-Based Refresh Contract (Story 14.24)
+## Status: DELIVERED ✅ (Backend PRs #22, #23 merged to main)
 
-### Story Context
-**14.24 — Add cookie-session E2E journey**  
-*Blocked: backend cookie refresh behavior not available + contract agreement needed*
-
-### Current State
-- Backend supports HttpOnly cookies for `access_token` (Path=/, Secure, SameSite=Lax) and `refresh_token` (Path=/api/v1/auth/refresh, Secure, SameSite=Lax)
-- Login (`POST /api/v1/auth/login`) returns tokens in **both** JSON body and Set-Cookie headers
-- Frontend in cookie mode discards JSON tokens; uses cookies automatically
-- Refresh endpoint: `POST /api/v1/auth/refresh` — currently requires `refreshToken` in JSON body (Bearer pattern)
-- No cookie-only refresh flow implemented
-
-### What We Need
-Implement a **cookie-only refresh flow** where:
-1. **Request:** `POST /api/v1/auth/refresh` with **no body**, cookies sent automatically (including `refresh_token` cookie)
-2. **Success (204):** Returns new `access_token` and `refresh_token` via `Set-Cookie` headers; no JSON body required
-3. **Failure (401):** If refresh token invalid/expired/rotated — clear cookies via `Set-Cookie` with `Max-Age=0`; frontend performs hard logout
-4. **Frontend behavior:** Single-flight refresh (concurrent 401s share one refresh), retry once on success, hard logout on terminal failure
-
-### Technical Justification
-- **Security:** HttpOnly cookies prevent XSS token theft; no tokens in JavaScript memory
-- **Standards compliance:** Aligns with RFC 6265 / SameSite cookie best practices
-- **Testability:** Enables Epic 14.24 cookie E2E journey against isolated backend
-- **Contract parity:** Frontend already implements single-flight refresh coordinator for Bearer; cookie mode should mirror semantics
-
-### Proposed Contract
-
-#### `POST /api/v1/auth/refresh` (Cookie Mode)
-| Aspect | Detail |
-|---|---|
-| **Auth** | Cookie-based (no Authorization header) |
-| **Request Body** | Empty (or omitted) |
-| **Cookies Sent** | `refresh_token` (HttpOnly, Path=/api/v1/auth/refresh) |
-| **Success (204)** | `Set-Cookie: access_token=...; Path=/; HttpOnly; Secure; SameSite=Lax`<br>`Set-Cookie: refresh_token=...; Path=/api/v1/auth/refresh; HttpOnly; Secure; SameSite=Lax` |
-| **Failure (401)** | `Set-Cookie: access_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`<br>`Set-Cookie: refresh_token=; Max-Age=0; Path=/api/v1/auth/refresh; HttpOnly; Secure; SameSite=Lax` |
-| **Error Body** | Optional; frontend ignores JSON on 401 in cookie mode |
-
-#### Frontend Mapping (Already Implemented)
-- `api.ts`: `refresh()` detects cookie mode via `VITE_AUTH_MODE=cookie` or cookie presence
-- Single-flight coordinator shares refresh across concurrent 401s
-- On 401 from refresh: clears `sessionStorage`, invalidates React Query, navigates to `/login`
-- Skips refresh for `/login`, `/register`, `/refresh`, `/logout`
-
-### Acceptance Criteria (Frontend Perspective)
-- [ ] Cookie mode login leaves no tokens in `sessionStorage`
-- [ ] Authenticated requests send cookies, no `Authorization` header
-- [ ] 401 on API call triggers **one** `POST /api/v1/auth/refresh` (empty body)
-- [ ] Refresh success → original request retries once with new cookies
-- [ ] Refresh failure (401) → hard logout (clear cookies + sessionStorage + navigate `/login`)
-- [ ] Concurrent 401s share single refresh request
+All four requests have been implemented by the backend team and are available in `url-shortener-service` main branch.
 
 ---
 
-## Request 2: Isolated Disposable Backend for E2E (Story 14.23)
+## Request 1: Cookie-Based Refresh Contract (Story 14.24) ✅ DONE
 
-### Story Context
-**14.23 — Add critical bearer E2E journey**  
-*Blocked: needs approved isolated/disposable backend + explicit authorization*
+**Backend delivered (Phase A):**
+- `InvalidRefreshTokenException` mapped to 401 in `GlobalExceptionHandler` (was 400)
+- `AuthController.refresh` scoped try/catch: on refresh failure → 401 + both cookies cleared with `Max-Age=0` (reusing `clearAuthCookies`)
+- **Success unchanged:** `200` + `AuthResponse` + cookies (dual-write, ADR 0010 maintained). Frontend ignores JSON in cookie mode.
+- `REQ-AUTH-009` updated, `backend-frontend-contract.md` §6 documented, `ADR 0010` reviewed
+- `AuthCookieIT` added: refresh invalid/expired → 401 + cookies cleared; body token invalid → 401 no improper cleanup; blocked → 403
 
-### What We Need
-A **dedicated, isolated backend instance** for frontend E2E testing with:
-- **Isolation:** No shared data with dev/staging/prod; reset between test runs or dedicated per-run
-- **Admin user:** Pre-configured admin account with `APP_ADMIN_EMAILS` set (for admin probe)
-- **Clean state:** Database reset capability (or disposable per test run)
-- **Base URL:** Stable hostname for `PLAYWRIGHT_BASE_URL` (e.g., `https://e2e-backend.url-shortener.internal`)
-- **Auth:** Bearer token flow fully functional (login, refresh, logout, /me)
-
-### Technical Justification
-- **Safety:** Current admin probe (`e2e/admin-probe.spec.ts`) writes real users/links and has **no delete-user endpoint** — cannot run against shared environments
-- **Determinism:** E2E tests need predictable state; shared backends cause flakes
-- **Policy compliance:** Epic 14.3 env policy restricts E2E to local/disposable only; Staging pending (14.26)
-- **Admin probe validation:** Validates admin flows (pagination, code search, block/unblock, force-archive, guard) against real backend
-
-### Requirements
-| Requirement | Detail |
-|---|---|
-| **Database** | Dedicated `url_shortener` schema; disposable or reset script |
-| **Admin user** | Email in `APP_ADMIN_EMAILS`; credentials via `E2E_EMAIL`/`E2E_PASSWORD` |
-| **Rate limits** | Relaxed or disabled for E2E test user (avoid 429 during probe) |
-| **CORS** | Allow `PLAYWRIGHT_BASE_URL` origin (SPA preview) |
-| **Lifetime** | Available for CI `workflow_dispatch` runs; can be ephemeral |
-
-### Alternative (if dedicated instance not feasible)
-- **Local disposable stack:** Docker Compose / Testcontainers spun up in CI before E2E job
-- **Frontend owns CI orchestration** if backend provides Docker image
+**Frontend alignment:** Updated `docs/api-contract.md` to document 200 success (not 204), dual-write, and hard logout on 401.
 
 ---
 
-## Request 3: Staging Readiness Contract (Story 14.26)
+## Request 2: Isolated Disposable Backend for E2E (Story 14.23) ✅ DONE
 
-### Story Context
-**14.26 — Establish Staging readiness contract**  
-*Blocked: DevOps must provide readiness evidence*
+**Backend delivered (Phase B):**
+- `docker-compose.e2e.yaml` — MongoDB + Redis + API (production image, no JVM/Maven)
+- `scripts/seed-e2e.sh` — seeds admin (`admin@example.com` / `password123`, role ADMIN when `APP_ADMIN_EMAILS=admin@example.com`) + regular users + links
+- Rate limit ON by default; relax for E2E with `RATE_LIMITER_LIMIT=100000 RATE_LIMITER_AUTH_LIMIT=100000`
+- Docs: `docs/e2e-backend.md`, `docs/staging-readiness.md` (checklist)
+- Same-origin via edge (Caddy/nginx) — **no CORS** (ADR 0010), cookie mode requires same-origin
 
-### What We Need (DevOps → Frontend)
-Before any frontend test runs against Staging, we need documented evidence:
-
-| Category | Required Evidence |
-|---|---|
-| **Health/Readiness** | `/actuator/health` (or equivalent) returning 200; version endpoint |
-| **URL/Origin** | Stable `https://staging.url-shortener.example.com` (or similar) |
-| **Backend Version** | Deployed service version + git SHA; matches frontend contract expectations |
-| **Synthetic Test Data** | Pre-seeded accounts: admin (for probe), regular users, links; known IDs |
-| **Isolation/Reset** | Mechanism to reset synthetic data between runs; no production data leakage |
-| **Secrets** | `E2E_EMAIL`/`E2E_PASSWORD` for admin user; `PLAYWRIGHT_BASE_URL` in CI vars |
-| **Allowed Scope** | Explicit list: happy-path bearer only; **no admin probe**; non-destructive reads only |
-| **Monitoring/Contact** | On-call contact for test failures; alerting if test run impacts shared resources |
-| **Rollback/Cleanup** | Procedure to revert test data changes; TTL for test accounts |
-
-### Frontend Constraints
-- **14.27 Staging smoke** only runs after 14.26 readiness + explicit authorization
-- **Never** run admin probe against Staging (destructive, no cleanup API)
-- Staging smoke = non-destructive: login → shorten → list → logout (happy path)
-- Run via `workflow_dispatch` only; not on every PR
+**Frontend action needed:** Update CI/admin probe to use disposable backend.
 
 ---
 
-## Request 4: Contract Alignment Verification (Story 14.11)
+## Request 3: Staging Readiness Contract (Story 14.26) ✅ DONE
 
-### Current State
-Frontend MSW handlers aligned to `docs/api-contract.md`:
-- `AdminUrlLookupResponse = { item: LinkResponse; ownerUserId: string; ownerEmail: string | null }` (nested, per Java record)
-- Pagination: `{ items, nextCursor: string | null, hasMore }`
-- Auth: `token`, `refreshToken`, `userId`, `email`, `name`
-- Shorten: `originalUrl`, `customAlias`, `ttlSeconds`, `domain`
-- Error shapes: `ApiError` with `kind` discriminator
+**Backend delivered (Phase B):**
+- `/actuator/info` public with `build.version` (`management.info.build.enabled=true` + spring-boot-maven-plugin `build-info.properties`)
+- `scripts/seed-e2e.sh` for synthetic data
+- `docs/staging-readiness.md` checklist covering: health 200, stable URL, version+git SHA, seed, reset, CI secrets, happy-path bearer scope, contact/rollback
 
-### Ask
-**Confirm no drift** between backend OpenAPI spec and `docs/api-contract.md` for:
-- Admin lookup response shape (nested `item` + `ownerUserId` + `ownerEmail`)
-- Cookie refresh endpoint (see Request 1)
-- Any new fields/endpoints added since last sync
-
-Frontend will not adopt contract changes without backend confirmation.
+**Frontend action:** Can poll `/actuator/info` for `build.version` on staging (advisory).
 
 ---
 
-## Timeline & Priority
+## Request 4: Contract Alignment Verification (Story 14.11) ✅ IN PROGRESS
 
-| Request | Priority | Target | Blocker For |
-|---|---|---|---|
-| 1. Cookie Refresh Contract | **High** | Before 14.24 execution | 14.24 (cookie E2E), 14.27 (staging smoke if cookie mode) |
-| 2. Disposable Backend | **High** | Before 14.23 execution | 14.23 (bearer E2E), admin probe validation |
-| 3. Staging Readiness | **Medium** | Before 14.27 execution | 14.27 (staging smoke) |
-| 4. Contract Verification | **Ongoing** | Continuous | All integration/E2E tests |
+**Backend delivered (Phase C):**
+- OpenAPI 3.1 spec committed at `docs/openapi.json` (19 endpoints, 20 schemas)
+- Security schemes: `bearerAuth` (HTTP Bearer), `cookieAuth` (API key in `access_token` cookie)
+- Swagger UI enabled in dev/staging (`APP_SECURITY_SWAGGER_ENABLED`), fail-closed in prod
+- Drift identified:
+  - `AuthResponse` has extra `role` field — **confirmed tolerated** (frontend already includes optional `role`)
+  - Error shape: backend emits `{status, error, message, timestamp}`; frontend `ApiError` uses `kind` — **mapped** (backend `error`/`status` → frontend `kind`)
+  - Admin lookup nested + pagination already match
 
----
-
-## Frontend Commitments
-
-In return, frontend commits to:
-- **Never** run admin probe against Staging/production
-- **Never** commit real credentials; all via CI secrets
-- Provide MSW handlers mirroring agreed contracts for local development
-- Share test run evidence (SHA, logs, reports) for any backend-impacting runs
-- Coordinate deployments via shared CHANGELOG / release tags
+**Frontend alignment:** `docs/api-contract.md` updated to match OpenAPI spec (source of truth).
 
 ---
 
-## Contact
+## Additional Backend Deliveries (Bonus)
 
-**Frontend Owner:** Daniel Castilho  
-**Repo:** `daniel-castilho/url-shortener-web`  
-**Epic Tracking:** `tasks/epic-14/` (baseline, risk map, evidence)  
-**CI:** `.github/workflows/ci.yml` (E2E opt-in via `E2E_ENABLED`)
-
----
-
-## Appendix: Related Epic 14 Stories
-
-| Story | Status | Depends On |
-|---|---|---|
-| 14.11 | ✅ Done | Contract alignment (MSW matches api-contract.md) |
-| 14.13 | ✅ Done | Bearer + cookie auth boundary tests (cookie E2E needs Request 1) |
-| 14.22 | ✅ Done | Fixtures documented (independent contexts, unique data, cleanup) |
-| 14.23 | ⏳ Blocked | **Request 2** (disposable backend) |
-| 14.24 | ⏳ Blocked | **Request 1** (cookie refresh contract) |
-| 14.25 | ✅ Done | Admin probe safety (dev-only, guarded, cleanup recipe) |
-| 14.26 | ⏳ Blocked | **Request 3** (DevOps readiness) |
-| 14.27 | ⏳ Blocked | 14.26 + explicit auth |
+| Feature | Detail |
+|---------|--------|
+| **Canonical `shortUrl`** | `ShortLinkBaseUrlResolver`: verified custom domain → `APP_PUBLIC_BASE_URL` → request origin fallback. **Frontend must not reconstruct URLs** — use `shortUrl` field as-is. |
+| **Custom domains** | Caddy on-demand TLS gated by `ACTIVE` registration (`/internal/edge/domain-ask`, shared token). Non-ACTIVE hosts rejected (404). Spec: `docs/custom-domain-edge.md`. |
+| **Custom alias rules** | Alphabet `[a-zA-Z0-9-_]`, max 64, min by plan (FREE 8 / SILVER 5 / GOLD 4 / DIAMOND 3), reserved words list (api, auth, admin, swagger, v1-v3, login, register, refresh, logout, dashboard, profile, billing, settings, users, urls, static, public, assets, css, js, images, img, favicon, robots, sitemap). |
+| **Pagination** | `{items, nextCursor: string|null, hasMore}`, cursor opaque Base64url, limit default 20 / cap 100. |
+| **429** | Empty body, `Retry-After`, `RateLimit-*` headers; independent buckets `SHORTEN`/`REDIRECT`/`AUTH`. |
+| **Redirect** | `GET /{id}` → 302; 404 unknown/archived; 410 expired; 429 rate limited. |
+| **Errors** | Always `{status, error, message, timestamp}` (+ `validationErrors` on 400). No CORS (same-origin). |
+| **X-Request-Id** | Every request/response carries `X-Request-Id` (UUID per attempt); retry after 401 gets fresh id. Frontend already implements this. |
 
 ---
 
-**Please review and confirm feasibility / timeline for Requests 1–3.**  
-Frontend will pause 14.23/14.24/14.27 until backend coordination complete.
+## Frontend Follow-up Actions
+
+| Action | Status |
+|--------|--------|
+| Update `docs/api-contract.md` to match OpenAPI spec | ✅ Done |
+| Update MSW handlers (`src/test/handlers.ts`) for new auth/refresh/rate-limit/version | ✅ Done |
+| Verify integration tests pass | ✅ 33/33 pass |
+| Update admin probe to use disposable backend (`docker-compose.e2e.yaml`) | ⏳ Pending |
+| Update CI to use `/actuator/info` for version check on staging | ⏳ Pending |
+| Add plan-based min alias length validation (FREE 8 / SILVER 5 / GOLD 4 / DIAMOND 3) | ⏳ Optional enhancement |
+
+---
+
+## Verification
+
+- `npm run check` — PASS (lint, typecheck, build)
+- `npm test` — 38/38 kernel tests pass
+- `npm run test:integration` — 33/33 integration tests pass
+- All green locally

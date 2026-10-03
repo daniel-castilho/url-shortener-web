@@ -1,97 +1,95 @@
 # API Contract — url-shortener-service
 
-Source of truth: the OpenAPI spec served at `/v3/api-docs` by the backend
-(`ca.tyny.urlshortener`). Field names, payloads, and status codes below are
-captured verbatim from that spec so the UI layer can mirror the API exactly.
+**Source of truth:** OpenAPI 3.1 spec at `docs/openapi.json` in `url-shortener-service`
+(19 endpoints, 20 schemas). This document mirrors the spec for the UI layer.
 
 - Base URL (local dev): `http://localhost:8080`
 - Content type: `application/json` on all request/response bodies
-- Auth: `Authorization: Bearer <token>` header (spec does **not** declare a
-  security scheme; the access token comes from `POST /api/v1/auth/login|register`)
+- Security schemes (OpenAPI `components.securitySchemes`):
+  - `bearerAuth` — HTTP Bearer (JWT in `Authorization` header)
+  - `cookieAuth` — API key via `access_token` cookie (HttpOnly, Secure, SameSite=Lax)
+- Not applied globally (public endpoints: redirect, auth, actuator).
 
-> Regenerate this file with the current spec. The OpenAPI endpoint is gated:
-> the backend must run with `app.security.swagger.enabled=true`.
+> Workflow: frontend generates typed client from `docs/openapi.json` (no live backend needed). Any contract change regenerates the spec and commits the delta.
+
+---
 
 ## Endpoints
 
 ### Auth
 
-| Method | Path                    | Summary                              |
-| :----- | :---------------------- | :----------------------------------- |
-| POST   | `/api/v1/auth/register` | Register a new user                  |
-| POST   | `/api/v1/auth/login`    | Login                                |
-| POST   | `/api/v1/auth/refresh`  | Rotate (refresh) tokens              |
-| GET    | `/api/v1/auth/me`       | Get current authenticated user       |
-| POST   | `/api/v1/auth/logout`   | Logout (clears cookies / local session) |
+| Method | Path | Summary |
+| :----- | :--- | :------ |
+| POST | `/api/v1/auth/register` | Register a new user |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/refresh` | Rotate (refresh) tokens |
+| GET | `/api/v1/auth/me` | Get current authenticated user |
+| POST | `/api/v1/auth/logout` | Logout (clears cookies / local session) |
 
 ### Auth Details
 
-**Cookie mode**: When `VITE_AUTH_MODE=cookie` (or backend sets HttpOnly cookies),
-the backend issues `access_token` (Path=/, HttpOnly, SameSite=Lax) and
-`refresh_token` (Path=/api/v1/auth/refresh, HttpOnly, SameSite=Lax) cookies.
-The `Authorization: Bearer` header is still accepted (Bearer wins if both
-present).
+**Cookie mode** (backend sets HttpOnly cookies):
+- `access_token` — Path=/, HttpOnly, Secure, SameSite=Lax, 24h
+- `refresh_token` — Path=/api/v1/auth/refresh, HttpOnly, Secure, SameSite=Lax, 7d
+- `Authorization: Bearer` still accepted (Bearer wins if both present).
 
-- `GET /api/v1/auth/me` → `200` `UserResponse`; `401` if not authenticated.
-  Used for session rehydration on reload (cookie mode) or after idle.
-- `POST /api/v1/auth/logout` → `204`. Clears the access and refresh token cookies.
-  Does not invalidate the JWT on the server (no server-side blocklist). Idempotent.
+**Refresh failure = hard logout:** Any `401` from `POST /api/v1/auth/refresh` (token absent, invalid, or expired — via body or cookie) clears **both** cookies with `Max-Age=0` and returns `401`. Scoped **only** to refresh — `401` from `/login` or `/me` does **not** clear cookies.
 
-**Bearer mode** (default): Tokens in `sessionStorage`. `Authorization: Bearer`
-header required. Refresh via `POST /api/v1/auth/refresh` with
-`{ refreshToken }`.
+**Frontend guidance:** Treat refresh `401` as logout → clear local state, navigate to `/login`. On successful refresh, retry the original request **once**.
 
-**Response payloads** (both modes):
+**Rate limiting:** Auth endpoints (`login`, `register`, `refresh`) have IP-based rate limit (scope `AUTH`) → `429` with `Retry-After` header.
+
+**Response payloads (both modes):**
 - `AuthResponse` (login/register/refresh): `{ token, refreshToken, userId, email, name, role? }`
 - `UserResponse` (me): `{ userId, email, name, role? }`
 
-The backend still returns `token` and `refreshToken` in JSON bodies even in
-cookie mode — the SPA may choose to ignore them when cookies are the source
-of truth.
+Backend returns `token`/`refreshToken` in JSON even in cookie mode — SPA ignores them when cookies are source of truth.
+
+**Refresh success:** `200` + `AuthResponse` + cookies (dual-write, ADR 0010). **Not 204.** Frontend ignores JSON body in cookie mode.
 
 ### URLs
 
-| Method | Path                       | Summary                         |
-| :----- | :------------------------- | :------------------------------ |
-| GET    | `/api/v1/urls`             | List authenticated user's links |
-| POST   | `/api/v1/urls`             | Shorten a URL                   |
-| GET    | `/api/v1/urls/{id}`        | Get link details                |
-| PATCH  | `/api/v1/urls/{id}`        | Update a link                   |
-| DELETE | `/api/v1/urls/{id}`        | Archive a link                  |
-| GET    | `/api/v1/urls/{id}/clicks` | Get link click analytics        |
-| GET    | `/{id}`                    | Redirect to original URL        |
+| Method | Path | Summary |
+| :----- | :--- | :------ |
+| GET | `/api/v1/urls` | List authenticated user's links |
+| POST | `/api/v1/urls` | Shorten a URL |
+| GET | `/api/v1/urls/{id}` | Get link details |
+| PATCH | `/api/v1/urls/{id}` | Update a link |
+| DELETE | `/api/v1/urls/{id}` | Archive a link |
+| GET | `/api/v1/urls/{id}/clicks` | Get link click analytics |
+| GET | `/{id}` | Redirect to original URL |
 
 ### Domains
 
-| Method | Path                            | Summary                     |
-| :----- | :------------------------------ | :-------------------------- |
-| GET    | `/api/v1/domains`               | List claimed domains        |
-| POST   | `/api/v1/domains`               | Claim a custom domain       |
-| POST   | `/api/v1/domains/{host}/verify` | Re-trigger DNS verification |
-| DELETE | `/api/v1/domains/{host}`        | Remove a custom domain      |
+| Method | Path | Summary |
+| :----- | :--- | :------ |
+| GET | `/api/v1/domains` | List claimed domains |
+| POST | `/api/v1/domains` | Claim a custom domain |
+| POST | `/api/v1/domains/{host}/verify` | Re-trigger DNS verification |
+| DELETE | `/api/v1/domains/{host}` | Remove a custom domain |
 
 ### Admin (Epic 10)
 
 Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authenticated non-admin (`USER`) → `403`.
 
-| Method | Path                                        | Summary                             |
-| :----- | :------------------------------------------ | :---------------------------------- |
-| GET    | `/api/v1/admin/users?limit&cursor&q`        | List users (email prefix filter)    |
-| GET    | `/api/v1/admin/users/{userId}/urls`         | List user's links (includes archived) |
-| GET    | `/api/v1/admin/urls?code=`                  | Find link by short code             |
-| POST   | `/api/v1/admin/users/{userId}/block`        | Block a user (idempotent)           |
-| POST   | `/api/v1/admin/users/{userId}/unblock`      | Unblock a user (idempotent)         |
-| DELETE | `/api/v1/admin/urls/{id}`                   | Force-archive any link (idempotent) |
+| Method | Path | Summary |
+| :----- | :--- | :------ |
+| GET | `/api/v1/admin/users?limit&cursor&q` | List users (email prefix filter) |
+| GET | `/api/v1/admin/users/{userId}/urls` | List user's links (includes archived) |
+| GET | `/api/v1/admin/urls?code=` | Find link by short code |
+| POST | `/api/v1/admin/users/{userId}/block` | Block a user (idempotent) |
+| POST | `/api/v1/admin/users/{userId}/unblock` | Unblock a user (idempotent) |
+| DELETE | `/api/v1/admin/urls/{id}` | Force-archive any link (idempotent) |
+
+---
 
 ## Data Types
 
 ### Auth
 
-`RegisterRequest` (all required): `name` (min 1), `email` (format email, min 1),
-`password` (min 6). → `200` `AuthResponse`.
+`RegisterRequest` (all required): `name` (min 1), `email` (format email, min 1), `password` (min 6). → `200` `AuthResponse`.
 
-`LoginRequest` (all required): `email` (format email, min 1), `password` (min 1).
-→ `200` `AuthResponse`.
+`LoginRequest` (all required): `email` (format email, min 1), `password` (min 1). → `200` `AuthResponse`.
 
 `RefreshTokenRequest` (required): `refreshToken` (min 1). → `200` `AuthResponse`.
 
@@ -99,8 +97,8 @@ Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authentic
 
 ```ts
 {
-  token: string; // access token, ~24h
-  refreshToken: string; // ~7d
+  token: string;           // access token, ~24h
+  refreshToken: string;    // ~7d
   userId: string;
   email: string;
   name: string;
@@ -121,6 +119,12 @@ Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authentic
 }
 ```
 
+**Alias validation (backend enforced):**
+- Alphabet: `[a-zA-Z0-9-_]`
+- Max length: **64 chars** (new limit — mirror in frontend input)
+- Min length by plan: FREE 8 / SILVER 5 / GOLD 4 / DIAMOND 3
+- Reserved words: `api`, `auth`, `health`, `admin`, `swagger`, `v1`…`v3`, `login`, `register`, `refresh`, `logout`, `dashboard`, `profile`, `billing`, `settings`, `users`, `urls`, `static`, `public`, `assets`, `css`, `js`, `images`, `img`, `favicon`, `robots`, `sitemap`
+
 `POST /api/v1/urls` → `200` `ShortenResponse`:
 
 ```ts
@@ -130,21 +134,15 @@ Requires authenticated user with `role: "ADMIN"`. Anonymous → `401`, authentic
 }
 ```
 
-Also documented: `400` invalid URL or custom alias (including exceeding 64 characters),
-`409` custom alias in use, `429` rate limit exceeded.
+Errors: `400` invalid URL or custom alias (including exceeding 64 chars), `409` custom alias in use, `429` rate limit exceeded.
 
 ### Links (list / detail / update)
 
-`GET /api/v1/urls?limit&cursor` → `200` `LinkListResponse`
-(`{ items: ShortUrlResponse[]; nextCursor: string | null; hasMore: boolean }`);
-`400` malformed cursor, `401` unauthenticated. `limit` max 100.
+`GET /api/v1/urls?limit&cursor` → `200` `LinkListResponse` (`{ items: ShortUrlResponse[]; nextCursor: string | null; hasMore: boolean }`); `400` malformed cursor, `401` unauthenticated. `limit` max 100.
 
 `GET /api/v1/urls/{id}` → `200` `ShortUrlResponse`; `401`, `403` not owner, `404`.
 
-`PATCH /api/v1/urls/{id}` body `UpdateLinkRequest` (all optional): `originalUrl`,
-`title`, `tags` (array of strings, pattern `[a-z0-9_-]+`, 1–50 chars),
-`utm` (`UtmParamsRequest`), `expiresAt` (date-time), `domain`.
-→ `200` `ShortUrlResponse`; `400`, `401`, `403`, `404`, `409` (archived immutable).
+`PATCH /api/v1/urls/{id}` body `UpdateLinkRequest` (all optional): `originalUrl`, `title`, `tags` (array of strings, pattern `[a-z0-9_-]+`, 1–50 chars), `utm` (`UtmParamsRequest`), `expiresAt` (date-time), `domain`. → `200` `ShortUrlResponse`; `400`, `401`, `403`, `404`, `409` (archived immutable).
 
 `DELETE /api/v1/urls/{id}` → `204`; `401`, `403`, `404`.
 
@@ -168,16 +166,18 @@ Also documented: `400` invalid URL or custom alias (including exceeding 64 chara
 }
 ```
 
-`UtmParamsRequest` / `UtmParamsResponse`: `source`, `medium`, `campaign`, `term`,
-`content` — all optional strings.
+**Canonical `shortUrl`:** Every endpoint that exposes `shortUrl` uses the same resolver (`ShortLinkBaseUrlResolver`):
+1. Verified custom domain → `https://<domain>/<id>`
+2. `APP_PUBLIC_BASE_URL` (required in prod, always `https://`)
+3. Fallback: request origin (dev direct only)
+
+**Do not reconstruct URLs in the frontend** — use the `shortUrl` field as-is.
 
 ### Analytics
 
 `GET /api/v1/urls/{id}/clicks?unit&from&to` → `200` `ClickAnalyticsResponse`.
 
-Query params: `unit` (`day` rollup or `hour`, bounded raw series max 30 days),
-`from` (UTC `yyyy-MM-dd`, defaults to 29 days before `to`), `to` (UTC
-`yyyy-MM-dd`, defaults to today). `400` invalid unit/range, `401`, `403`, `404`.
+Query params: `unit` (`day` rollup or `hour`, bounded raw series max 30 days), `from` (UTC `yyyy-MM-dd`, defaults to 29 days before `to`), `to` (UTC `yyyy-MM-dd`, defaults to today). `400` invalid unit/range, `401`, `403`, `404`.
 
 `ClickAnalyticsResponse`:
 
@@ -196,8 +196,7 @@ Query params: `unit` (`day` rollup or `hour`, bounded raw series max 30 days),
 
 ### Domains
 
-`ClaimDomainRequest` (required): `host` (min 1). `POST /api/v1/domains` →
-`201` `DomainResponse`; `400` invalid host, `401`, `409` already claimed.
+`ClaimDomainRequest` (required): `host` (min 1). `POST /api/v1/domains` → `201` `DomainResponse`; `400` invalid host, `401`, `409` already claimed.
 
 `GET /api/v1/domains` → `200` `DomainListResponse` (`{ domains: DomainResponse[] }`); `401`.
 
@@ -277,8 +276,6 @@ Query params: `limit` (max 100), `cursor`, `q` (email prefix filter, not contain
 
 ### Block semantics (for existing SPA)
 
-These are documented for the UI; no new pages are implemented in this sync.
-
 - Blocked `POST /api/v1/auth/login` and `POST /api/v1/auth/refresh` → `403` body `"Account blocked."` (not `401`).
 - Authenticated `POST /api/v1/urls` while blocked → `403`.
 - Authenticated `GET /api/v1/urls` while blocked → `200` (read-only access retained).
@@ -288,12 +285,31 @@ These are documented for the UI; no new pages are implemented in this sync.
 
 ### Redirect
 
-`GET /{id}` (e.g. `vE1GpYK`) → `302` to original URL; `404` not found,
-`410` expired, `429` rate limited.
+`GET /{id}` (e.g. `vE1GpYK`) → `302` to original URL; `404` not found, `410` expired, `429` rate limited.
 
-## Client mapping (`src/lib/api.ts`)
+### Version / Build Info
 
-The client requests below consume the exact fields above — no renamed aliases:
+`GET /actuator/info` (public) → `200` with `build.version`:
+
+```ts
+{
+  build: {
+    artifact: "url-shortener-service",
+    version: "0.X.Y",
+    time: "..."
+  }
+}
+```
+
+Frontend can read `build.version` for compatibility checks on staging (advisory only).
+
+### Error Format
+
+All errors: `{ status, error, message, timestamp }` (+ `validationErrors` on `400`). No CORS (same-origin).
+
+### Client mapping (`src/lib/api.ts`)
+
+Consumes exact fields above — no renamed aliases:
 
 - `api.register(name, email, password)` → `POST /api/v1/auth/register`
 - `api.login(email, password)` → `POST /api/v1/auth/login`
@@ -305,19 +321,8 @@ The client requests below consume the exact fields above — no renamed aliases:
 - `api.updateUrl(id, body)` → `PATCH /api/v1/urls/{id}`
 - `api.archiveUrl(id)` → `DELETE /api/v1/urls/{id}`
 
-Token refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` (bearer mode)
-or cookie-based (cookie mode), single-flight on 401; hard logout clears
-`sessionStorage`/cookies and React Query when refresh fails.
+Token refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` (bearer) or cookie-based (cookie mode), single-flight on 401; hard logout clears `sessionStorage`/cookies and React Query when refresh fails. **Refresh failure (401) clears both cookies with `Max-Age=0`.**
 
-The `api.me()` call is used for session rehydration on reload (both modes).
+Every request sends `X-Request-Id` header (UUID per attempt; retry after 401/refresh gets fresh id). Carried on `ApiError.requestId` for support triage.
 
-Client-only addition (backend echoes, no contract change): every request,
-including the refresh call, sends an `X-Request-Id` header (UUID generated per
-attempt — a retry after 401/refresh gets a fresh id). The id is carried on
-`ApiError.requestId` and displayed in the error UI for support triage.
-
-On `429` the client reads `Retry-After` (seconds form only; HTTP-date is
-ignored) and carries it on `ApiError.retryAfterSec`; when present the error
-copy shows the wait time. Note: `Retry-After` is only readable cross-origin
-if the backend exposes it via `Access-Control-Expose-Headers` — otherwise the
-generic `429` copy applies. Wire format unchanged.
+On `429` client reads `Retry-After` (seconds form only; HTTP-date ignored) → `ApiError.retryAfterSec`; error copy shows wait time. Note: `Retry-After` only readable cross-origin if backend exposes via `Access-Control-Expose-Headers`.
