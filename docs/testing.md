@@ -46,6 +46,12 @@ MSW handlers in src/test/handlers.ts speak the real contract (token, items, next
 
 Keep e2e/happy-path.spec.ts (bearer).
 
+Keep e2e/admin-probe.spec.ts (live admin probe, opt-in): needs Java with
+`APP_ADMIN_EMAILS` + `E2E_EMAIL`/`E2E_PASSWORD` admin credentials; skips
+without them. Every assert must fail if the named admin flow (pagination,
+code search, block/unblock, force-archive, guard) does not happen — no
+vacuous passes.
+
 Add e2e/cookie-session.spec.ts only when Java plus cookie refresh exist:
 
 - VITE_AUTH_MODE=cookie
