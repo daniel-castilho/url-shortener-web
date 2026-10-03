@@ -106,7 +106,7 @@ Epic 14 extends the pillar-9 baseline with systematic gates, measurement, access
 - 14.1–14.3: Baseline portfolio, risk-to-test map, environment/safety policy (Staging pending)
 - 14.4: CI adds lint + typecheck as required PR checks (job: "Lint + Typecheck + Test + Integration + Build")
 - 14.5: Hygiene protections confirmed (no `.only` in src; admin-probe gated skip)
-- 14.6: Coverage baseline assessment complete; needs `@vitest/coverage-v8` dep approval
+- 14.6: **Coverage artifact implemented** — Vitest (integration) + node:test (kernel) LCOV reports uploaded as `coverage-report` artifact (14-day retention); baseline captured; risk-based thresholds documented (not enforced)
 - 14.7: Risk-based coverage policy drafted (kernel > auth/admin > pages; no global 100%)
 - 14.8–14.9: Kernel deterministic (38/38); critical gaps covered (URL, auth-mode, errors, PATCH, refresh-coordinator, session-events, api-refresh)
 - 14.10–14.11: Harness hardened (unhandled requests fail, cleanup+resetHandlers), MSW contract-aligned
@@ -184,3 +184,21 @@ npm run build
 ```
 
 E2E opt-in via `vars.E2E_ENABLED` or `workflow_dispatch`.
+
+---
+
+## Coverage (Epic 14.6)
+
+- **Artifact**: `coverage-report` uploaded on every PR (14-day retention)
+  - Vitest/v8: `coverage/` (HTML, LCOV, JSON, text) — integration layer
+  - Node `node:test`: `coverage/kernel.lcov` (LCOV) — kernel layer (`--experimental-test-coverage`)
+- **Baseline** (recorded at SHA `4bf1925`):
+  - Integration (Vitest): Statements ~78%, Branches ~73%, Functions ~77%, Lines ~82%
+  - Kernel (node:test): Not yet measured in CI (experimental flag); tracked as accepted gap
+- **Risk-based thresholds** (documented, **not enforced**):
+  - Kernel (src/lib): line ≥90%, branch ≥80%
+  - Auth/session: line ≥85%, branch ≥80%
+  - Admin: line ≥80%, branch ≥75%
+  - Pages: line ≥70%, branch ≥65%
+- **Kernel gap**: `node:test` suite uses experimental coverage flag; no threshold enforcement
+- **Next step**: Agree file-level baselines + thresholds in follow-up PR; then add `vitest --coverage --threshold` or similar gate.
