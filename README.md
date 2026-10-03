@@ -39,8 +39,7 @@ origin.
 - **UI:** React 19 + Vite, mobile-first Tailwind v4, shadcn/ui (New York, CSS variables).
 - **HTTP:** `fetch` in `src/lib/api.ts`. Bearer JWT from `AuthResponse.token`.
   On `401`, one retry after `POST /api/v1/auth/refresh` with `{ refreshToken }`.
-- **Session:** `sessionStorage` keys `us.token` / `us.refreshToken` (boilerplate;
-  not HttpOnly cookies).
+- **Session:** `sessionStorage` keys `us.token` / `us.refreshToken` (bearer mode) or HttpOnly cookies (cookie mode via `VITE_AUTH_MODE=cookie`).
 - **Same-origin:** Vite proxies `/api` and `/actuator` to `http://localhost:8080`.
   Production should do the same in NGINX. `GET /{id}` must **not** be swallowed
   by the SPA.
@@ -221,17 +220,16 @@ truth: [url-shortener-service](https://github.com/daniel-castilho/url-shortener-
 
 ## Current State
 
-Boilerplate cut: shell, auth session, shorten, list, detail, archive.
-Responsive layout (mobile-first). No test suite, no cookie session, no BFF.
+Boilerplate cut: shell, auth session (bearer + cookie), shorten, list, detail, archive.
+Responsive layout (mobile-first). Test suite: kernel (38), integration (33), E2E (opt-in).
+Cookie session implemented; no BFF.
 
 ## Roadmap
 
-- Cookie HttpOnly session (optional thin BFF)
 - Cursor “load more” on `/links`
 - PATCH form (title, tags, utm, `expiresAt`)
 - Domain claim screens
 - Click analytics charts
-- Vitest + Playwright
 - NGINX snippet for SPA vs `/{id}`
 
 ## License

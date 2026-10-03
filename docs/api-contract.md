@@ -16,11 +16,38 @@ captured verbatim from that spec so the UI layer can mirror the API exactly.
 
 ### Auth
 
-| Method | Path                    | Summary                 |
-| :----- | :---------------------- | :---------------------- |
-| POST   | `/api/v1/auth/register` | Register a new user     |
-| POST   | `/api/v1/auth/login`    | Login                   |
-| POST   | `/api/v1/auth/refresh`  | Rotate (refresh) tokens |
+| Method | Path                    | Summary                              |
+| :----- | :---------------------- | :----------------------------------- |
+| POST   | `/api/v1/auth/register` | Register a new user                  |
+| POST   | `/api/v1/auth/login`    | Login                                |
+| POST   | `/api/v1/auth/refresh`  | Rotate (refresh) tokens              |
+| GET    | `/api/v1/auth/me`       | Get current authenticated user       |
+| POST   | `/api/v1/auth/logout`   | Logout (revokes refresh token)       |
+
+### Auth Details
+
+**Cookie mode**: When `VITE_AUTH_MODE=cookie` (or backend sets HttpOnly cookies),
+the backend issues `access_token` (Path=/, HttpOnly, SameSite=Lax) and
+`refresh_token` (Path=/api/v1/auth/refresh, HttpOnly, SameSite=Lax) cookies.
+The `Authorization: Bearer` header is still accepted (Bearer wins if both
+present).
+
+- `GET /api/v1/auth/me` → `200` `UserResponse`; `401` if not authenticated.
+  Used for session rehydration on reload (cookie mode) or after idle.
+- `POST /api/v1/auth/logout` → `204`. Revokes the refresh token cookie; access
+  token cookie is also cleared. Idempotent.
+
+**Bearer mode** (default): Tokens in `sessionStorage`. `Authorization: Bearer`
+header required. Refresh via `POST /api/v1/auth/refresh` with
+`{ refreshToken }`.
+
+**Response payloads** (both modes):
+- `AuthResponse` (login/register/refresh): `{ token, refreshToken, userId, email, name, role? }`
+- `UserResponse` (me): `{ userId, email, name, role? }`
+
+The backend still returns `token` and `refreshToken` in JSON bodies even in
+cookie mode — the SPA may choose to ignore them when cookies are the source
+of truth.
 
 ### URLs
 
@@ -109,7 +136,7 @@ Also documented: `400` invalid URL or custom alias (including exceeding 64 chara
 ### Links (list / detail / update)
 
 `GET /api/v1/urls?limit&cursor` → `200` `LinkListResponse`
-(`{ items: ShortUrlResponse[]; nextCursor: string; hasMore: boolean }`);
+(`{ items: ShortUrlResponse[]; nextCursor: string | null; hasMore: boolean }`);
 `400` malformed cursor, `401` unauthenticated. `limit` max 100.
 
 `GET /api/v1/urls/{id}` → `200` `ShortUrlResponse`; `401`, `403` not owner, `404`.
@@ -119,7 +146,7 @@ Also documented: `400` invalid URL or custom alias (including exceeding 64 chara
 `utm` (`UtmParamsRequest`), `expiresAt` (date-time), `domain`.
 → `200` `ShortUrlResponse`; `400`, `401`, `403`, `404`, `409` (archived immutable).
 
-`DELETETE /api/v1/urls/{id}` → `204`; `401`, `403`, `404`.
+`DELETE /api/v1/urls/{id}` → `204`; `401`, `403`, `404`.
 
 `ShortUrlResponse`:
 
@@ -270,14 +297,19 @@ The client requests below consume the exact fields above — no renamed aliases:
 
 - `api.register(name, email, password)` → `POST /api/v1/auth/register`
 - `api.login(email, password)` → `POST /api/v1/auth/login`
+- `api.me()` → `GET /api/v1/auth/me`
+- `api.logout()` → `POST /api/v1/auth/logout`
 - `api.shorten(body)` → `POST /api/v1/urls`
 - `api.listUrls(limit, cursor?)` → `GET /api/v1/urls?limit&cursor`
 - `api.getUrl(id)` → `GET /api/v1/urls/{id}`
 - `api.updateUrl(id, body)` → `PATCH /api/v1/urls/{id}`
 - `api.archiveUrl(id)` → `DELETE /api/v1/urls/{id}`
 
-Token refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }`, single-flight
-on 401; hard logout clears `sessionStorage` and React Query when refresh fails.
+Token refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` (bearer mode)
+or cookie-based (cookie mode), single-flight on 401; hard logout clears
+`sessionStorage`/cookies and React Query when refresh fails.
+
+The `api.me()` call is used for session rehydration on reload (both modes).
 
 Client-only addition (backend echoes, no contract change): every request,
 including the refresh call, sends an `X-Request-Id` header (UUID generated per

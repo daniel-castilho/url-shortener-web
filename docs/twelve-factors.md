@@ -8,14 +8,16 @@ The backend (`url-shortener-service`) defines:
 
 - Stateless JWT (HS256), no server session — Factor 6
 - Two tokens: `access` (~24h, `app.jwt.expiration-ms`), `refresh` (~7d, `app.jwt.refresh-expiration-ms`)
-- Endpoints: `POST /api/v1/auth/register|login|refresh`
+- Endpoints: `POST /api/v1/auth/register|login|refresh|logout`, `GET /api/v1/auth/me`
 - Payload: `{ token, refreshToken, userId, email, name }` — field is `token`, not `accessToken`
-- Usage: `Authorization: Bearer <token>`
-- Refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` → new access token
+- Usage: `Authorization: Bearer <token>` (bearer mode) or HttpOnly cookies (cookie mode)
+- Refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` (bearer) or cookie-based
+- `GET /api/v1/auth/me` → current user (for rehydration)
+- `POST /api/v1/auth/logout` → revokes refresh token, clears cookies
 - Same-origin via Vite proxy `/api` → `:8080`; no CORS required
 - Secret (`APP_JWT_SECRET`) in env only — Factor 3
 
-This contract is closed. The frontend does not need: HttpOnly cookies, CSRF tokens, server-side logout, OpenID, or roles for current features.
+This contract is closed. The frontend implements both bearer (sessionStorage) and cookie (HttpOnly) modes.
 
 ---
 
@@ -50,7 +52,7 @@ us.email          → user email
 us.name           → user display name
 ```
 
-> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. Cookie mode removes this residual risk. Bearer mode remains acceptable for boilerplate; production should use Cookie mode once the backend ships HttpOnly cookies.
+> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. Cookie mode (HttpOnly cookies, `SameSite=Lax`) removes this residual risk and is the recommended production mode. Bearer mode (`sessionStorage`) remains available for boilerplate/local dev.
 
 ---
 
@@ -101,22 +103,21 @@ interface AuthContextValue {
 **What this is NOT**:
 
 - Not a server session (Factor 6 unchanged)
-- Not cookie/HttpOnly/BFF — tokens remain in JS memory/storage
-- Not OpenID / SSO — purely local React state synced with `sessionStorage`
+- Not OpenID / SSO — purely local React state synced with `sessionStorage` (bearer) or HttpOnly cookies (cookie)
 
 ---
 
 ## Summary Table
 
-| Decision           | Option Chosen                       | Backend Factor        |
-| ------------------ | ----------------------------------- | --------------------- |
-| Token storage      | `sessionStorage` (all keys)         | 6 (stateless)         |
-| 401 strategy       | Single-flight refresh → hard logout | —                     |
-| Session reactivity | React Context + storage sync        | 6 (no server session) |
+| Decision           | Option Chosen                          | Backend Factor        |
+| ------------------ | -------------------------------------- | --------------------- |
+| Token storage      | `sessionStorage` (bearer) / HttpOnly cookies (cookie) | 6 (stateless)         |
+| 401 strategy       | Single-flight refresh → hard logout    | —                     |
+| Session reactivity | React Context + storage sync           | 6 (no server session) |
 
 ---
 
 ## Out of Scope (Not Auth)
 
 - Cursor pagination, PATCH forms, NGINX `/{id}` proxy, English copy, shadcn forms
-- Analytics charts, branded domains, i18n, BFF/Cookie migration
+- Analytics charts, branded domains, i18n
