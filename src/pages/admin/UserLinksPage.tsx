@@ -30,12 +30,11 @@ export default function UserLinksPage() {
     setConfirmArchive(id);
   };
 
-  const executeArchive = () => {
-    if (confirmArchive) {
-      api.adminForceArchive(confirmArchive);
-      setConfirmArchive(null);
-      q.refetch();
-    }
+  const executeArchive = async () => {
+    if (!confirmArchive) return;
+    await api.adminForceArchive(confirmArchive);
+    setConfirmArchive(null);
+    await q.refetch();
   };
 
   return (

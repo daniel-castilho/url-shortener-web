@@ -153,20 +153,8 @@ export type AdminUserListResponse = {
   hasMore: boolean;
 };
 
-export type AdminUrlResponse = {
-  id: string;
-  originalUrl: string;
-  shortUrl: string;
-  createdAt: string;
-  userId: string | null;
-  isCustomAlias: boolean;
-  clickCount: number;
-  expiresAt: string | null;
-  title: string | null;
-  tags: string[] | null;
-  utm: UtmParams | null;
-  deletedAt: string | null;
-  domain: string | null;
+export type AdminUrlLookupResponse = {
+  item: ShortUrlResponse;
   ownerUserId: string;
   ownerEmail: string | null;
 };
@@ -234,7 +222,7 @@ export const api = {
   adminUserUrls: (userId: string) =>
     request<LinkListResponse>(`/api/v1/admin/users/${userId}/urls`),
   adminUrlByCode: (code: string) =>
-    request<AdminUrlResponse>(`/api/v1/admin/urls?code=${encodeURIComponent(code)}`),
+    request<AdminUrlLookupResponse>(`/api/v1/admin/urls?code=${encodeURIComponent(code)}`),
   adminBlock: (userId: string) =>
     request<void>(`/api/v1/admin/users/${userId}/block`, { method: "POST" }),
   adminUnblock: (userId: string) =>

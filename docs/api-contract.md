@@ -222,25 +222,13 @@ Query params: `limit` (max 100), `cursor`, `q` (email prefix filter, not contain
 
 ---
 
-`GET /api/v1/admin/urls?code=` → `200` `AdminUrlResponse`:
+`GET /api/v1/admin/urls?code=` → `200` `AdminUrlLookupResponse`:
 
 ```ts
 {
-  id: string;
-  originalUrl: string;
-  shortUrl: string;
-  createdAt: string;         // date-time
-  userId: string | null;
-  isCustomAlias: boolean;
-  clickCount: number;        // int64
-  expiresAt: string | null;  // date-time
-  title: string | null;
-  tags: string[] | null;
-  utm: UtmParamsResponse | null;
-  deletedAt: string | null;  // date-time
-  domain: string | null;
-  ownerUserId: string;
-  ownerEmail: string | null; // may be null
+  item: ShortUrlResponse;    // standard link view, same item shape as GET /api/v1/urls
+  ownerUserId: string;       // the link's owning user
+  ownerEmail: string | null; // null when the owner document no longer exists
 }
 ```
 

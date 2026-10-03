@@ -8,6 +8,31 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Added
+
+- Live admin e2e probe (`e2e/admin-probe.spec.ts`, opt-in via
+  `E2E_EMAIL`/`E2E_PASSWORD` + `APP_ADMIN_EMAILS` on the service): seeds users
+  over the REST API and proves the admin flows against a real backend — users
+  grid with cursor pagination (seeds 25 users, asserts `Load more` fetches
+  them all), code search by short code (asserts the `Found:`/`Owner:`/
+  `Original:` result), force-archive round-trip, block/unblock round-trip with
+  self-block guard (no action buttons on the admin's own row), ADMIN-only nav
+  and PrivateAdmin redirect for USER. Asserts fail if the named flow does not
+  happen.
+
+### Fixed
+
+- Admin code search rendered empty `Found:`/`Original:`/`Clicks:` against the
+  live backend: the UI read a flat DTO while the service returns
+  `AdminUrlLookupResponse` — `{ item: ShortUrlResponse, ownerUserId,
+  ownerEmail }`. UI, MSW mock and `docs/api-contract.md` now follow the wire
+  shape. Found by the hardened live probe; the old mock had papered over the
+  mismatch.
+- Admin mutations no longer race the list refetch: block/unblock (`UsersPage`)
+  and force-archive (`UserLinksPage`) now await the mutation before refetching,
+  so the grid/link status cannot show pre-mutation state. Found by hardening
+  the live admin probe — the previous probe never actually mutated anything.
+
 ## [0.2.1] - 2026-09-16
 
 ### Added

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/render";
 import UsersPage from "@/pages/admin/UsersPage";
@@ -63,8 +63,7 @@ describe("UsersPage (admin)", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Block" }));
 
-    // Dialog should close
-    expect(await screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("unblock button appears for blocked users", async () => {

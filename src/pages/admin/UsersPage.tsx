@@ -32,20 +32,18 @@ export default function UsersPage() {
   const [blockTarget, setBlockTarget] = useState<string | null>(null);
   const [unblockTarget, setUnblockTarget] = useState<string | null>(null);
 
-  const handleBlock = () => {
-    if (blockTarget) {
-      api.adminBlock(blockTarget);
-      setBlockTarget(null);
-      q.refetch();
-    }
+  const handleBlock = async () => {
+    if (!blockTarget) return;
+    await api.adminBlock(blockTarget);
+    setBlockTarget(null);
+    await q.refetch();
   };
 
-  const handleUnblock = () => {
-    if (unblockTarget) {
-      api.adminUnblock(unblockTarget);
-      setUnblockTarget(null);
-      q.refetch();
-    }
+  const handleUnblock = async () => {
+    if (!unblockTarget) return;
+    await api.adminUnblock(unblockTarget);
+    setUnblockTarget(null);
+    await q.refetch();
   };
 
   if (q.isPending) return <p>Loading</p>;
@@ -76,11 +74,11 @@ export default function UsersPage() {
             {codeQuery.error && <ApiErrorMessage error={codeQuery.error} />}
             {codeQuery.data && (
               <div className="mt-2 p-3 rounded border bg-muted/50">
-                <p className="font-medium">Found: {codeQuery.data.shortUrl}</p>
+                <p className="font-medium">Found: {codeQuery.data.item.shortUrl}</p>
                 <p className="text-sm text-muted-foreground">Owner: {codeQuery.data.ownerEmail ?? "unknown"} ({codeQuery.data.ownerUserId})</p>
-                <p className="text-sm text-muted-foreground">Original: {codeQuery.data.originalUrl}</p>
-                <p className="text-sm text-muted-foreground">Clicks: {codeQuery.data.clickCount}</p>
-                <p className="text-sm text-muted-foreground">{codeQuery.data.deletedAt ? "Archived" : "Active"}</p>
+                <p className="text-sm text-muted-foreground">Original: {codeQuery.data.item.originalUrl}</p>
+                <p className="text-sm text-muted-foreground">Clicks: {codeQuery.data.item.clickCount}</p>
+                <p className="text-sm text-muted-foreground">{codeQuery.data.item.deletedAt ? "Archived" : "Active"}</p>
               </div>
             )}
           </div>

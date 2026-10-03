@@ -25,20 +25,8 @@ type AdminUserResponse = {
   createdAt: string;
 };
 
-type AdminUrlResponse = {
-  id: string;
-  originalUrl: string;
-  shortUrl: string;
-  createdAt: string;
-  userId: string | null;
-  isCustomAlias: boolean;
-  clickCount: number;
-  expiresAt: string | null;
-  title: string | null;
-  tags: string[] | null;
-  utm: Record<string, string> | null;
-  deletedAt: string | null;
-  domain: string | null;
+type AdminUrlLookupResponse = {
+  item: LinkResponse;
   ownerUserId: string;
   ownerEmail: string | null;
 };
@@ -75,24 +63,13 @@ export function makeAdminUser(overrides: Partial<AdminUserResponse> = {}): Admin
   };
 }
 
-export function makeAdminUrl(overrides: Partial<AdminUrlResponse> = {}): AdminUrlResponse {
+export function makeAdminUrl(
+  overrides: { item?: Partial<LinkResponse>; ownerUserId?: string; ownerEmail?: string | null } = {},
+): AdminUrlLookupResponse {
   return {
-    id: "abc123",
-    originalUrl: "https://example.com",
-    shortUrl: "https://tyny.url/abc123",
-    createdAt: "2026-09-01T00:00:00Z",
-    userId: "1",
-    isCustomAlias: false,
-    clickCount: 5,
-    expiresAt: null,
-    title: "Test Link",
-    tags: ["tag1"],
-    utm: null,
-    deletedAt: null,
-    domain: null,
-    ownerUserId: "1",
-    ownerEmail: "owner@example.com",
-    ...overrides,
+    item: makeLink(overrides.item ?? {}),
+    ownerUserId: overrides.ownerUserId ?? "1",
+    ownerEmail: overrides.ownerEmail ?? "owner@example.com",
   };
 }
 
@@ -228,7 +205,9 @@ export const handlers = [
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
     if (code) {
-      return HttpResponse.json(makeAdminUrl({ shortUrl: `https://tyny.url/${code}`, ownerUserId: "1", ownerEmail: "owner@example.com" }));
+      return HttpResponse.json(
+        makeAdminUrl({ item: { id: code, shortUrl: `https://tyny.url/${code}` }, ownerUserId: "1", ownerEmail: "owner@example.com" }),
+      );
     }
     return new HttpResponse(null, { status: 404 });
   }),
