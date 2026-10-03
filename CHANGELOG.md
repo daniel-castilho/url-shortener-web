@@ -8,6 +8,8 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-03
+
 ### Added
 
 - Alias max length validation: the custom alias field on the shorten form now
@@ -33,8 +35,8 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   live backend: the UI read a flat DTO while the service returns
   `AdminUrlLookupResponse` — `{ item: ShortUrlResponse, ownerUserId,
   ownerEmail }`. UI, MSW mock and `docs/api-contract.md` now follow the wire
-  shape. Found by the hardened live probe; the old mock had papered over the
-  mismatch.
+  shape. Found by the hardened live probe; the previous probe never actually
+  mutated anything.
 - Admin mutations no longer race the list refetch: block/unblock (`UsersPage`)
   and force-archive (`UserLinksPage`) now await the mutation before refetching,
   so the grid/link status cannot show pre-mutation state. Found by hardening
