@@ -18,7 +18,9 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
   `Original:` result), force-archive round-trip, block/unblock round-trip with
   self-block guard (no action buttons on the admin's own row), ADMIN-only nav
   and PrivateAdmin redirect for USER. Asserts fail if the named flow does not
-  happen.
+  happen. Writes real data with no API undo (no delete-user endpoint), so it
+  refuses non-local base URLs unless `E2E_ALLOW_REMOTE` is set — disposable
+  dev stacks only; cleanup recipe in `docs/testing.md`.
 
 ### Fixed
 

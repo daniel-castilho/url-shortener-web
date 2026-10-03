@@ -4,13 +4,36 @@ const ADMIN_EMAIL = process.env.E2E_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_PASSWORD;
 const SEED_PASSWORD = "probe-pass-123";
 const GRID_SEED_COUNT = 25;
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5173";
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 // Live admin probe (Epic 13): runs against a real backend with APP_ADMIN_EMAILS
 // set to an ADMIN account. Opt-in via E2E_EMAIL/E2E_PASSWORD admin credentials;
 // every test skips without them. Every assert is written to fail if the flow it
 // names does not happen.
+//
+// The probe WRITES REAL DATA over the REST API and there is no delete-user
+// endpoint to undo it. Run it only against an isolated, disposable dev stack —
+// never a shared or production backend. It refuses non-local base URLs unless
+// E2E_ALLOW_REMOTE is set (only for disposable remote environments).
+// Seeded records are marked for cleanup by these prefixes (recipe in
+// docs/testing.md):
+//   users: probe-grid-*, probe-block-*, probe-nav-* (@example.com)
+//   links: https://admin-probe.example.com/<ts>, https://force-archive.example.com/<ts>
+
+function requireDisposableTarget(): void {
+  const host = new URL(BASE_URL).hostname;
+  if (!LOCAL_HOSTS.has(host) && !process.env.E2E_ALLOW_REMOTE) {
+    throw new Error(
+      `admin probe refused to run against ${BASE_URL}: it seeds real users and links ` +
+        "with no API undo. Point PLAYWRIGHT_BASE_URL at a disposable dev stack, " +
+        "or set E2E_ALLOW_REMOTE=1 only on disposable remote environments.",
+    );
+  }
+}
 
 async function requireAdminEnv(): Promise<void> {
+  requireDisposableTarget();
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     test.skip();
   }
@@ -39,7 +62,8 @@ function userRow(page: Page, email: string) {
 }
 
 async function revealUserRow(page: Page, email: string) {
-  for (let attempt = 0; attempt < 10; attempt++) {
+  const rows = page.locator("div.grid-cols-12");
+  for (let attempt = 0; attempt < 25; attempt++) {
     const row = userRow(page, email);
     if ((await row.count()) > 0) {
       break;
@@ -48,10 +72,11 @@ async function revealUserRow(page: Page, email: string) {
     if (!(await more.isVisible())) {
       break;
     }
+    const before = await rows.count();
     await more.click();
     await expect
-      .poll(async () => row.count(), { timeout: 20_000 })
-      .toBeGreaterThan(0);
+      .poll(async () => rows.count(), { timeout: 20_000 })
+      .toBeGreaterThan(before);
   }
   const row = userRow(page, email);
   await expect(row).toHaveCount(1);

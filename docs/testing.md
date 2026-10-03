@@ -52,6 +52,17 @@ without them. Every assert must fail if the named admin flow (pagination,
 code search, block/unblock, force-archive, guard) does not happen — no
 vacuous passes.
 
+The probe writes real data (seeds `probe-*` users, shortens and archives
+links) and the service has no delete-user endpoint, so it must target a
+disposable dev backend only — the spec refuses non-local base URLs unless
+`E2E_ALLOW_REMOTE` is set. Reset the dev database (mongosh, `url_shortener`)
+when the noise matters:
+
+```
+db.users.deleteMany({ email: /^probe-(grid|block|nav)-/ })
+db.short_urls.deleteMany({ originalUrl: /^https:\/\/(admin-probe|force-archive)\.example\.com\// })
+```
+
 Add e2e/cookie-session.spec.ts only when Java plus cookie refresh exist:
 
 - VITE_AUTH_MODE=cookie
