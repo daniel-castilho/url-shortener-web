@@ -8,6 +8,10 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Fixed
+
+- `docs/twelve-factors.md`: Corrected logout semantics — `POST /api/v1/auth/logout` clears cookies / local session; does not perform server-side JWT revocation or blocklist. Clarified cookie-mode XSS protection — HttpOnly cookies keep cookie values out of `document.cookie` and avoid persistent browser storage, but the backend still returns `token`/`refreshToken` in JSON responses, so XSS reading response bodies could still access tokens.
+
 ## [0.3.0] - 2026-10-03
 
 ### Added

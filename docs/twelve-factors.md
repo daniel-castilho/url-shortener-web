@@ -13,7 +13,7 @@ The backend (`url-shortener-service`) defines:
 - Usage: `Authorization: Bearer <token>` (bearer mode) or HttpOnly cookies (cookie mode)
 - Refresh: `POST /api/v1/auth/refresh` with `{ refreshToken }` (bearer) or cookie-based
 - `GET /api/v1/auth/me` → current user (for rehydration)
-- `POST /api/v1/auth/logout` → revokes refresh token, clears cookies
+- `POST /api/v1/auth/logout` → clears cookies / local session (no server-side token revocation or blocklist)
 - Same-origin via Vite proxy `/api` → `:8080`; no CORS required
 - Secret (`APP_JWT_SECRET`) in env only — Factor 3
 
@@ -56,7 +56,7 @@ us.email          → user email
 us.name           → user display name
 ```
 
-> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. Cookie mode (HttpOnly cookies, `SameSite=Lax`) removes this residual risk and is the recommended production mode. Bearer mode (`sessionStorage`) remains available for boilerplate/local dev.
+> **Security note**: `sessionStorage` is accessible to JavaScript — XSS can exfiltrate tokens. Cookie mode (HttpOnly cookies, `SameSite=Lax`) keeps cookie values out of `document.cookie` and avoids persistent token storage in browser storage, which limits the blast radius. However, the backend still returns `token` and `refreshToken` in the JSON bodies of `/login` and `/refresh` responses; XSS that reads the response body could still access these tokens. Bearer mode (`sessionStorage`) remains available for boilerplate/local dev.
 
 ---
 
