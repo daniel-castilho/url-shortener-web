@@ -37,8 +37,12 @@ This contract is closed. The frontend implements both bearer (sessionStorage) an
 
 **Rationale (Cookie)**:
 
-- Removes tokens from JavaScript reachable surface — XSS cannot exfiltrate tokens
-- HttpOnly cookies with `SameSite=Lax` provide CSRF protection for same-origin SPA
+- HttpOnly cookies with `SameSite=Lax` keep tokens out of `document.cookie` and
+  `localStorage`/`sessionStorage` — XSS cannot directly exfiltrate the cookies.
+- The backend still returns `token` and `refreshToken` in the JSON body of
+  `/login` and `/refresh`; the SPA discards them in cookie mode. XSS that reads
+  the response body could still access them, but the persistent credential
+  lives in the HttpOnly cookie.
 - Backend issues `access_token` (Path=/) and `refresh_token` (Path=/api/v1/auth/refresh)
 - `Authorization: Bearer` remains accepted when both present (Bearer wins)
 

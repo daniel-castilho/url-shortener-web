@@ -75,7 +75,7 @@ src/
 
 ## Requirements
 
-- Node.js 22+ (npm)
+- Node.js 24+ (npm)
 - Backend running on `http://localhost:8080` for local proxy
 
 ## Getting Started

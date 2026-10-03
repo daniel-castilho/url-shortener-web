@@ -22,7 +22,7 @@ captured verbatim from that spec so the UI layer can mirror the API exactly.
 | POST   | `/api/v1/auth/login`    | Login                                |
 | POST   | `/api/v1/auth/refresh`  | Rotate (refresh) tokens              |
 | GET    | `/api/v1/auth/me`       | Get current authenticated user       |
-| POST   | `/api/v1/auth/logout`   | Logout (revokes refresh token)       |
+| POST   | `/api/v1/auth/logout`   | Logout (clears cookies / local session) |
 
 ### Auth Details
 
@@ -34,8 +34,8 @@ present).
 
 - `GET /api/v1/auth/me` → `200` `UserResponse`; `401` if not authenticated.
   Used for session rehydration on reload (cookie mode) or after idle.
-- `POST /api/v1/auth/logout` → `204`. Revokes the refresh token cookie; access
-  token cookie is also cleared. Idempotent.
+- `POST /api/v1/auth/logout` → `204`. Clears the access and refresh token cookies.
+  Does not invalidate the JWT on the server (no server-side blocklist). Idempotent.
 
 **Bearer mode** (default): Tokens in `sessionStorage`. `Authorization: Bearer`
 header required. Refresh via `POST /api/v1/auth/refresh` with
