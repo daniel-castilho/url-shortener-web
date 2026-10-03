@@ -220,3 +220,29 @@ E2E opt-in via `vars.E2E_ENABLED` or `workflow_dispatch`.
 - To add a browser to required PR checks: explicit owner approval + CI cost analysis.
 
 **Playwright config:** Three projects defined (`chromium`, `firefox`, `webkit`) using `@playwright/test` devices.
+
+---
+
+## Flaky-Test & Feedback Metrics (Epic 14.30)
+
+**Collection:** `scripts/ci-metrics.js` extracts from latest successful CI run:
+- Duration per layer (lint, typecheck, kernel, integration, build)
+- Pass/fail/skip counts per layer
+- First-attempt pass rate per layer
+- Failure category classification (type, lint, api, timeout, assertion, test)
+
+**Artifact:** `ci-metrics.json` generated locally (can be uploaded as CI artifact in follow-up)
+
+**Baseline** (from recent runs):
+| Layer | Tests | Duration | First-Attempt Pass | Target |
+|---|---|---|---|---|
+| Kernel | 38 | ~190ms | 100% | ≥99% |
+| Integration | 33 | ~3.5s | 100% | ≥98% |
+| E2E | 2 | Not run (env) | N/A | ≥95% (when run) |
+
+**Ownership & SLA:**
+- **Owner**: Frontend team lead
+- **Remediation SLA**: 1 sprint (2 weeks) for any flaky test (retry-passed but first-attempt failed)
+- **Escalation**: If flaky rate >1% for 2 consecutive sprints → dedicated investigation spike
+
+**Tracking:** CI job logs + Playwright HTML report. No dedicated dashboard yet — `scripts/ci-metrics.js` provides local analysis.

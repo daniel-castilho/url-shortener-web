@@ -18,7 +18,7 @@ const LIB_OR_CONTEXT_PATTERNS = [
 
 export default tseslint.config(
   {
-    ignores: ["dist", "dist-ssr", "node_modules", "*.local", "*.tsbuildinfo", "coverage", ".stryker-tmp"],
+    ignores: ["dist", "dist-ssr", "node_modules", "*.local", "*.tsbuildinfo", "coverage", ".stryker-tmp", "scripts"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
