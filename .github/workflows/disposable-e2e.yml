@@ -1,0 +1,87 @@
+name: Disposable Backend E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/disposable-e2e.yml'
+      - 'e2e/**'
+
+jobs:
+  disposable-backend:
+    name: Disposable Backend E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v5
+
+      - name: Checkout backend (url-shortener-service)
+        uses: actions/checkout@v5
+        with:
+          repository: daniel-castilho/url-shortener-service
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: backend
+
+      - name: Start disposable backend
+        working-directory: ./backend
+        env:
+          APP_ADMIN_EMAILS: admin@example.com
+          RATE_LIMITER_LIMIT: 100000
+          RATE_LIMITER_AUTH_LIMIT: 100000
+        run: |
+          docker compose -f docker-compose.e2e.yaml up --build -d
+          # Wait for health endpoint
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/actuator/health >/dev/null; then
+              echo "Backend healthy"
+              break
+            fi
+            sleep 2
+          done
+          # Seed data
+          bash scripts/seed-e2e.sh
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Admin Probe (14.25)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          E2E_EMAIL: admin@example.com
+          E2E_PASSWORD: password123
+        run: npx playwright test e2e/admin-probe.spec.ts
+
+      - name: Run Bearer E2E (14.23)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8080
+        run: npx playwright test e2e/bearer-journey.spec.ts
+
+      - name: Run Cookie E2E (14.24)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          VITE_AUTH_MODE: cookie
+        run: npx playwright test e2e/cookie-session.spec.ts
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: disposable-e2e-traces
+          path: test-results/
+          retention-days: 7
