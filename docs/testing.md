@@ -202,3 +202,21 @@ E2E opt-in via `vars.E2E_ENABLED` or `workflow_dispatch`.
   - Pages: line ≥70%, branch ≥65%
 - **Kernel gap**: `node:test` suite uses experimental coverage flag; no threshold enforcement
 - **Next step**: Agree file-level baselines + thresholds in follow-up PR; then add `vitest --coverage --threshold` or similar gate.
+
+---
+
+## Browser Compatibility Matrix (Epic 14.28)
+
+**Supported browsers:**
+- **Chromium** — required per PR (runs in `check` job via `npm run e2e` when `E2E_ENABLED=true`)
+- **Firefox** — nightly + pre-release (runs in `nightly.yml` workflow)
+- **WebKit (Safari)** — nightly + pre-release (runs in `nightly.yml` workflow)
+
+**Policy:**
+- Product claims **Chromium support** as baseline.
+- Firefox and WebKit runs are non-blocking for PRs; they run in a separate nightly workflow (`nightly.yml`, daily at 02:00 UTC + `workflow_dispatch`).
+- Nightly workflow runs all three browsers via matrix strategy; failures upload traces as artifacts (7-day retention).
+- If a regression is found only in Firefox/WebKit, it is triaged but does not block PR merge unless it affects Chromium.
+- To add a browser to required PR checks: explicit owner approval + CI cost analysis.
+
+**Playwright config:** Three projects defined (`chromium`, `firefox`, `webkit`) using `@playwright/test` devices.
