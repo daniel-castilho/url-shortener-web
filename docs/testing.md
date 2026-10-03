@@ -10,7 +10,7 @@ The more tests resemble the way the software is used, the more confidence they g
 | Layer | Tool | When | What |
 | --- | --- | --- | --- |
 | Static | tsc -b, ESLint | every PR (npm run check) | types, boundaries |
-| Unit / kernel | node --test (Node >= 24) | every PR (npm test) | mapApiError, parseRetryAfter, buildPatch, auth-mode, refresh-coordinator, session-events, formatClickCount |
+| Unit / kernel | node --test (Node >= 24) | every PR (npm test) | mapApiError, parseRetryAfter, buildPatch, auth-mode, refresh-coordinator, session-events, formatClickCount, URL validation, link-edit |
 | Integration | Vitest + jsdom + Testing Library + MSW | every PR | pages with MemoryRouter + QueryClient + mocked HTTP |
 | E2E | Playwright | opt-in job when Java is up | one happy-path bearer, one cookie after refresh-loop fix |
 
@@ -95,3 +95,92 @@ CI: npm test + integration on every PR (no browsers). Playwright stays E2E_ENABL
 3. Vitest/jsdom + RTL + MSW + the five specs
 4. UAT probe + one Playwright run pasted
 5. Cookie E2E spec
+
+---
+
+## Epic 14 — Frontend Testing Excellence (Status: in progress)
+
+Epic 14 extends the pillar-9 baseline with systematic gates, measurement, accessibility, security, mutation testing, and safe-environment policies. Current status at SHA `524d4ef`:
+
+### Phase 0–3: Baseline, Gates, Kernel, Integration — **DONE**
+- 14.1–14.3: Baseline portfolio, risk-to-test map, environment/safety policy (Staging pending)
+- 14.4: CI adds lint + typecheck as required PR checks (job: "Lint + Typecheck + Test + Integration + Build")
+- 14.5: Hygiene protections confirmed (no `.only` in src; admin-probe gated skip)
+- 14.6: Coverage baseline assessment complete; needs `@vitest/coverage-v8` dep approval
+- 14.7: Risk-based coverage policy drafted (kernel > auth/admin > pages; no global 100%)
+- 14.8–14.9: Kernel deterministic (38/38); critical gaps covered (URL, auth-mode, errors, PATCH, refresh-coordinator, session-events, api-refresh)
+- 14.10–14.11: Harness hardened (unhandled requests fail, cleanup+resetHandlers), MSW contract-aligned
+- 14.12–14.18: Integration coverage present (login/session, auth modes, refresh, shorten/list/detail/edit/archive, admin)
+
+### Phase 4: Accessibility, Security, E2E Fixtures — **PARTIAL**
+- 14.19: Automated a11y — blocked pending `@axe-core/playwright` dep approval
+- 14.20: Manual keyboard/focus review — **DONE** (Chromium; all core flows keyboard-operable; Radix Dialog focus trap/return verified)
+- 14.21: Client security regression cases — **DONE** (OWASP mapping; XSS/javscript:/storage/tokens covered by existing tests)
+- 14.22: Isolated Playwright fixtures — compliant (independent contexts, unique synthetic data, cleanup recipe, hard stop for unapproved remote)
+- 14.23: Bearer E2E — **BLOCKED** (needs approved isolated/disposable backend + explicit auth)
+- 14.24: Cookie E2E — **BLOCKED** (needs backend cookie refresh contract + availability)
+- 14.25: Admin probe safety — compliant (dev-only, guarded, cleanup recipe documented)
+- 14.26: Staging readiness — **BLOCKED** (DevOps must provide health/URL/version/synthetic data/isolation/secrets/scope/monitoring/rollback)
+- 14.27: Staging smoke — **BLOCKED** (until 14.26 + explicit auth; non-destructive only)
+- 14.28: Browser matrix — Chromium required baseline; Firefox/WebKit cadence pending approval
+
+### Phase 5: Test Strength & Metrics
+- 14.29: Mutation spike — **BLOCKED** (needs Stryker approval for node:test + Vitest)
+- 14.30: Flaky/feedback metrics — baseline captured (kernel 38/38 ~190ms, integration 33/33 ~3.5s, 100% first-attempt); targets proposed; tracking formalization TBD
+
+### Phase 6: Documentation & Closeout
+- 14.31: Align docs — **THIS UPDATE** (env-safety-policy, risk map, metrics synced here)
+- 14.32: Closeout — pending blocked deps resolution
+
+### Environment & Safety Policy (from Epic 14.3)
+
+| Environment | Allowed? | Constraints |
+|---|---|---|
+| Local (127.0.0.1/localhost/::1) | Yes | Unit/integration/E2E with local disposable backend; non-secret creds |
+| Disposable dev backend (non-local, isolated) | Conditional | Only admin probe or 14.23 bearer E2E if explicitly approved; requires `E2E_ALLOW_REMOTE=1` |
+| Staging | Blocked | Not ready. Blocked until DevOps readiness evidence + explicit auth; never admin probe |
+| Production/UAT shared | No | Out of scope |
+
+Guards:
+- Admin probe: `requireDisposableTarget()` throws if non-local without `E2E_ALLOW_REMOTE`; `requireAdminEnv()` skips without `E2E_EMAIL/PASSWORD`
+- Playwright: `forbidOnly: !!process.env.CI`; `retries: process.env.CI ? 2 : 0`; trace on-first-retry
+- MSW: `onUnhandledRequest: "error"`; `afterEach` cleanup + `resetHandlers`
+
+### Risk-to-Test Map (from Epic 14.2)
+
+Critical journeys → layer → evidence:
+- Login/session → Integration (RTL+MSW) — LoginPage/AuthContext specs
+- Auth refresh → Kernel+Integration — refresh-coordinator + api-refresh + AuthContext
+- Shorten → Integration+Kernel — HomePage spec + url.test.ts
+- List/detail/paginate → Integration — LinksPage/LinkDetailPage
+- Edit/archive → Integration — LinkDetailPage specs
+- Admin → Integration+E2E probe — UsersPage/UserLinksPage + admin-probe
+- Cookie auth → Integration+E2E (blocked) — Auth boundary tests; 14.24 blocked
+- Accessibility → Integration+Manual — RTL semantic queries + 14.20 review + 14.19 axe (pending)
+- Security → Kernel+Integration — OWASP mapping (14.21), kernel URL validation
+
+### Flaky-Test & Feedback Metrics (from Epic 14.30)
+
+| Layer | Tests | Duration | First-Attempt Pass | Target |
+|---|---|---|---|---|
+| Kernel | 38 | ~190ms | 100% | ≥99% |
+| Integration | 33 | ~3.5s | 100% | ≥98% |
+| E2E | 2 | Not run (env) | N/A | ≥95% (when run) |
+
+Tracking: CI job logs + Playwright HTML report. No dedicated dashboard yet.
+
+---
+
+## CI Gates (Epic 14.4)
+
+Required PR check job: **Lint + Typecheck + Test + Integration + Build**
+
+```
+npm run lint
+npm run typecheck
+npm run test
+npm run test:integration
+npm run build
+```
+
+E2E opt-in via `vars.E2E_ENABLED` or `workflow_dispatch`.
