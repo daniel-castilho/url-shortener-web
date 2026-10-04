@@ -52,7 +52,9 @@ shorten() {
     -d "$body" \
     "$API_BASE/api/v1/urls" || true)
   if [ "$code" = "200" ]; then
-    ok "$(python3 -c 'import json;print(json.load(open("/tmp/seed-body.json"))["shortUrl"])' 2>/dev/null || echo "$alias") 2>/dev/null || true
+    local short_url
+    short_url=$(python3 -c 'import json;print(json.load(open("/tmp/seed-body.json"))["shortUrl"])' 2>/dev/null || echo "$alias")
+    ok "$short_url"
   elif [ "$code" = "409" ]; then
     ok "$alias already exists (skipped)"
   else
