@@ -12,7 +12,7 @@ jobs:
   disposable-backend:
     name: Disposable Backend E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
@@ -144,24 +144,40 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Start frontend preview server
+        run: |
+          npm run preview -- --host 0.0.0.0 --port 5173 &
+          echo "FRONTEND_URL=http://localhost:5173" >> $GITHUB_ENV
+          # Wait for frontend to be ready
+          for i in {1..30}; do
+            if curl -sf http://localhost:5173 >/dev/null 2>&1; then
+              echo "Frontend ready at http://localhost:5173"
+              break
+            fi
+            sleep 2
+          done
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
       - name: Run Admin Probe (14.25)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
           E2E_EMAIL: admin@example.com
           E2E_PASSWORD: password123
         run: npx playwright test e2e/admin-probe.spec.ts
 
       - name: Run Bearer E2E (14.23)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
         run: npx playwright test e2e/bearer-journey.spec.ts
 
       - name: Run Cookie E2E (14.24)
         env:
-          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
           VITE_AUTH_MODE: cookie
         run: npx playwright test e2e/cookie-session.spec.ts
 
