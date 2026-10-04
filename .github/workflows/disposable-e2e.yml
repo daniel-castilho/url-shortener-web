@@ -2,11 +2,7 @@ name: Disposable Backend E2E
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/disposable-e2e.yml'
-      - 'e2e/**'
+  # push trigger restored after hardening
 
 jobs:
   disposable-backend:
@@ -146,41 +142,104 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Test bearer auth flow
-          echo "Testing bearer auth flow..."
-          TOKEN=$(curl -sS -X POST "${API_BASE_URL}/api/v1/auth/login" \
-            -H "Content-Type: application/json" \
-            -d '{"email":"admin@example.com","password":"password123"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
-          echo "Got token: ${TOKEN:0:20}..."
+          # Helper: curl with status capture + JSON validation
+          api_call() {
+            local expected_status=$1
+            local method=$2
+            local url=$3
+            local data=$4
+            local headers=$5
+            local cookie_jar=$6
+            
+            body=$(mktemp)
+            trap 'rm -f "$body"' RETURN
+            
+            cmd=(curl -sS -o "$body" -w '%{http_code}' -X "$method" "$url")
+            [[ -n "$data" ]] && cmd+=(-d "$data")
+            [[ -n "$headers" ]] && cmd+=(-H "$headers")
+            [[ -n "$cookie_jar" ]] && cmd+=(-b "$cookie_jar" -c "$cookie_jar")
+            
+            status=$("${cmd[@]}")
+            
+            if [[ "$status" != "$expected_status" ]]; then
+              echo "FAIL: $method $url expected HTTP $expected_status; got $status"
+              cat "$body"
+              exit 1
+            fi
+            
+            echo "$body"
+          }
           
-          # Test shorten
-          SHORTEN_RESP=$(curl -sS -X POST "${API_BASE_URL}/api/v1/urls" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $TOKEN" \
-            -d '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}')
-          echo "Shorten response: $SHORTEN_RESP"
+          # Helper: validate JSON response has required fields
+          validate_json() {
+            local body=$1
+            shift
+            python3 - "$body" "$@" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    payload = json.load(f)
+for field in sys.argv[2:]:
+    if not payload.get(field):
+        print(f"FAIL: missing required field '{field}' in response")
+        sys.exit(1)
+print(f"OK: all required fields present ({', '.join(sys.argv[2:])})")
+PY
+          }
           
-          # Test list
-          LIST_RESP=$(curl -sS -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/urls")
-          echo "List response: $LIST_RESP"
+          echo "=== Testing bearer auth flow ==="
           
-          # Test cookie flow
-          echo "Testing cookie flow..."
+          # POST /api/v1/auth/login -> 200, token
+          LOGIN_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/login" \
+            '{"email":"admin@example.com","password":"password123"}' \
+            "Content-Type: application/json")
+          validate_json "$LOGIN_BODY" token
+          TOKEN=$(echo "$LOGIN_BODY" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+          echo "Bearer login: OK"
+          
+          # POST /api/v1/urls -> 201, id, shortUrl
+          SHORTEN_BODY=$(api_call 201 POST "${API_BASE_URL}/api/v1/urls" \
+            '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}' \
+            "Content-Type: application/json" "Authorization: Bearer $TOKEN")
+          validate_json "$SHORTEN_BODY" id shortUrl
+          echo "Bearer shorten: OK"
+          
+          # GET /api/v1/urls -> 200, items
+          LIST_BODY=$(api_call 200 GET "${API_BASE_URL}/api/v1/urls" \
+            "" "Authorization: Bearer $TOKEN")
+          validate_json "$LIST_BODY" items
+          echo "Bearer list: OK"
+          
+          echo "=== Testing cookie flow ==="
+          
           COOKIE_JAR=$(mktemp)
-          curl -sS -c "$COOKIE_JAR" -X POST "${API_BASE_URL}/api/v1/auth/login" \
-            -H "Content-Type: application/json" \
-            -d '{"email":"admin@example.com","password":"password123"}' >/dev/null
+          trap 'rm -f "$COOKIE_JAR"' RETURN
           
-          COOKIE_RESP=$(curl -sS -b "$COOKIE_JAR" -X POST "${API_BASE_URL}/api/v1/urls" \
-            -H "Content-Type: application/json" \
-            -d '{"originalUrl":"https://cookie-e2e.example.com/test"}')
-          echo "Cookie flow response: $COOKIE_RESP"
+          # POST /api/v1/auth/login (cookie) -> 200, cookies set
+          COOKIE_LOGIN_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/login" \
+            '{"email":"admin@example.com","password":"password123"}' \
+            "Content-Type: application/json" "$COOKIE_JAR")
+          # Validate cookies were set
+          if ! grep -q "access_token" "$COOKIE_JAR" || ! grep -q "refresh_token" "$COOKIE_JAR"; then
+            echo "FAIL: cookies not set in cookie jar"
+            cat "$COOKIE_JAR"
+            exit 1
+          fi
+          echo "Cookie login: OK (access_token + refresh_token cookies set)"
           
-          # Test refresh
-          REFRESH_RESP=$(curl -sS -b "$COOKIE_JAR" -X POST "${API_BASE_URL}/api/v1/auth/refresh")
-          echo "Refresh response: $REFRESH_RESP"
+          # POST /api/v1/urls (cookie) -> 201, id
+          COOKIE_SHORTEN_BODY=$(api_call 201 POST "${API_BASE_URL}/api/v1/urls" \
+            '{"originalUrl":"https://cookie-e2e.example.com/test"}' \
+            "Content-Type: application/json" "$COOKIE_JAR")
+          validate_json "$COOKIE_SHORTEN_BODY" id
+          echo "Cookie shorten: OK"
           
-          echo "API E2E tests passed!"
+          # POST /api/v1/auth/refresh (cookie) -> 200, token, refreshToken
+          REFRESH_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/refresh" \
+            "" "" "$COOKIE_JAR")
+          validate_json "$REFRESH_BODY" token refreshToken
+          echo "Cookie refresh: OK"
+          
+          echo "=== All API E2E tests passed ==="
 
       - name: Run Admin Probe (14.25) - API only
         env:
