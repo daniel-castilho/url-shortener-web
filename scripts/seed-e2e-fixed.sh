@@ -20,10 +20,10 @@ register() {
   )"
   code="${resp}"
   if [ "$code" = "200" ]; then
-    ok "registered $email"
+    ok "registered $email" >&2
     python3 -c 'import json;print(json.load(open("/tmp/seed-body.json"))["token"])'
   elif [ "$code" = "400" ] && grep -q "EMAIL_IN_USE\|already" /tmp/seed-body.json 2>/dev/null; then
-    ok "$email already registered (reusing)"
+    ok "$email already registered (reusing)" >&2
     code=$(curl -sS -o /tmp/seed-body.json -w '%{http_code}' \
       -H 'Content-Type: application/json' \
       -d "{\"email\":\"$email\",\"password\":\"$DEMO_PASSWORD\"}" \
