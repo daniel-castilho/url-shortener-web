@@ -144,6 +144,8 @@ jobs:
           E2E_EMAIL: admin@example.com
           E2E_PASSWORD: password123
         run: |
+          set -euo pipefail
+          
           # Test bearer auth flow
           echo "Testing bearer auth flow..."
           TOKEN=$(curl -sS -X POST "${API_BASE_URL}/api/v1/auth/login" \
@@ -186,19 +188,33 @@ jobs:
           E2E_EMAIL: admin@example.com
           E2E_PASSWORD: password123
         run: |
+          set -euo pipefail
+          
           # Admin probe API tests
           TOKEN=$(curl -sS -X POST "${API_BASE_URL}/api/v1/auth/login" \
             -H "Content-Type: application/json" \
             -d '{"email":"admin@example.com","password":"password123"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           
           # Test admin users list
-          curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users?limit=5" | python3 -c 'import sys,json;data=json.load(sys.stdin);assert len(data["items"]) >= 2;print(f"Users: {len(data[\"items\"])}")'
+          USERS_RESP=$(curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users?limit=5")
+          USER_COUNT=$(echo "$USERS_RESP" | python3 -c 'import sys,json;data=json.load(sys.stdin);print(len(data["items"]))')
+          echo "Users: $USER_COUNT"
+          if [ "$USER_COUNT" -lt 2 ]; then
+            echo "ERROR: Expected at least 2 users"
+            exit 1
+          fi
           
-          # Test admin user urls
-          curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users/demo-user-id/urls" | python3 -c 'import sys,json;data=json.load(sys.stdin);print(f"User URLs: {len(data[\"items\"])}")' || true
+          # Test admin user urls (may fail if user not found, that's ok)
+          curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users/demo-user-id/urls" | python3 -c 'import sys,json;data=json.load(sys.stdin);print("User URLs:", len(data["items"]))' || true
           
           # Test admin url lookup
-          curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/urls?code=api-e2e-test" | python3 -c 'import sys,json;data=json.load(sys.stdin);assert "item" in data;print("URL lookup works")'
+          LOOKUP_RESP=$(curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/urls?code=api-e2e-test")
+          HAS_ITEM=$(echo "$LOOKUP_RESP" | python3 -c 'import sys,json;data=json.load(sys.stdin);print("item" in data)')
+          if [ "$HAS_ITEM" != "True" ]; then
+            echo "ERROR: URL lookup failed"
+            exit 1
+          fi
+          echo "URL lookup works"
           
           echo "Admin probe API tests passed!"
 
