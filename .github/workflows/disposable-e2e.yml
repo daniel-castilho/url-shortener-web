@@ -53,7 +53,7 @@ jobs:
             fi
             
             if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "Backend healthy on localhost:8080/actuctor/health"
+              echo "Backend healthy on localhost:8080/actuator/health"
               echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
@@ -81,7 +81,7 @@ jobs:
             fi
             
             if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health/liveness >/dev/null 2>&1; then
-              echo "Backend healthy from inside app container (localhost:8080/actuator/health/liveness)"
+              echo "Backend healthy from inside app container (localhost:8080/actuctor/health/liveness)"
               echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
@@ -157,6 +157,7 @@ jobs:
           fi
           validate_json "$body" token
           TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+          echo "Bearer login: OK"
           
           # POST /api/v1/urls -> 200, id, shortUrl
           body=$(mktemp)
@@ -231,7 +232,6 @@ jobs:
             exit 1
           fi
           validate_json "$body" token refreshToken
-          TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])"')
           echo "Cookie refresh: OK"
           
           echo "=== All API E2E tests passed ==="
