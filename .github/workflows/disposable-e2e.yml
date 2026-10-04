@@ -156,7 +156,7 @@ jobs:
             exit 1
           fi
           validate_json "$body" token
-          echo "Bearer login: OK"
+          TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           
           # POST /api/v1/urls -> 200, id, shortUrl
           body=$(mktemp)
@@ -231,6 +231,7 @@ jobs:
             exit 1
           fi
           validate_json "$body" token refreshToken
+          TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])"')
           echo "Cookie refresh: OK"
           
           echo "=== All API E2E tests passed ==="
