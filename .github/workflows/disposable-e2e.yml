@@ -148,7 +148,7 @@ jobs:
           # POST /api/v1/auth/login -> 200, token
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
             -H "Content-Type: application/json" \
             -d '{"email":"admin@example.com","password":"password123"}')
           if [[ "$status" != "200" ]]; then
@@ -163,7 +163,7 @@ jobs:
           # POST /api/v1/urls -> 201, id, shortUrl
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $TOKEN" \
             -d '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}')
@@ -178,7 +178,7 @@ jobs:
           # GET /api/v1/urls -> 200, items
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X GET "${API_BASE_URL}/api/v1/urls" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X GET "${API_BASE_URL}/api/v1/urls" \
             -H "Authorization: Bearer $TOKEN")
           if [[ "$status" != "200" ]]; then
             echo "FAIL: list expected HTTP 200; got $status"
@@ -196,7 +196,7 @@ jobs:
           # POST /api/v1/auth/login (cookie) -> 200, cookies set
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
             -H "Content-Type: application/json" \
             -d '{"email":"admin@example.com","password":"password123"}' \
             -c "$COOKIE_JAR" -b "$COOKIE_JAR")
@@ -215,7 +215,7 @@ jobs:
           # POST /api/v1/urls (cookie) -> 201, id
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
             -H "Content-Type: application/json" \
             -d '{"originalUrl":"https://cookie-e2e.example.com/test"}' \
             -b "$COOKIE_JAR")
@@ -230,7 +230,7 @@ jobs:
           # POST /api/v1/auth/refresh (cookie) -> 200, token, refreshToken
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
-          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/refresh" \
+          status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/refresh" \
             -b "$COOKIE_JAR")
           if [[ "$status" != "200" ]]; then
             echo "FAIL: refresh expected HTTP 200; got $status"
