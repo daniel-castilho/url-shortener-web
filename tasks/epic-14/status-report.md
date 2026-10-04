@@ -1,7 +1,7 @@
 # Epic 14 Final Status Report — CLOSEOUT
 
 Epic 14: Frontend Testing Excellence and Confidence
-**Final SHA:** bb5c92f (main)
+**Final SHA:** 0c166bc (main)
 **Status:** CLOSEOUT with documented Staging exception
 
 ---
@@ -33,17 +33,17 @@ Epic 14: Frontend Testing Excellence and Confidence
 - [x] 14.19 — Automated a11y (axe on 3 anonymous routes; authenticated pending)
 - [x] 14.20 — AT evidence template (NVDA + VoiceOver; manual runs pending)
 - [x] 14.21 — Client security regression cases (OWASP mapped)
-- [x] 14.22 — Disposable backend E2E (docker-compose.e2e.yaml + seed-e2e.sh)
-- [x] 14.23 — Bearer E2E journey (register→login→shorten→list→logout on disposable)
-- [x] 14.24 — Cookie E2E journey (cookie mode, no sessionStorage, refresh, logout on disposable)
-- [x] 14.25 — Admin probe (runs on disposable backend; evidence captured)
-- [x] 14.28 — Browser matrix (Chromium required per PR; Firefox/WebKit nightly)
+- [x] 14.22 — **Disposable backend E2E integration** (docker-compose.e2e.yaml + seed-e2e.sh)
+- [x] 14.23 — **Bearer E2E journey** (API-level: register→login→shorten→list→logout on disposable)
+- [x] 14.24 — **Cookie E2E journey** (API-level: cookie mode, no sessionStorage, refresh, logout on disposable)
+- [x] 14.25 — **Admin probe** (API-level on disposable backend; evidence captured)
+- [x] 14.28 — Browser matrix (Chromium required per PR; Firefox/WebKit nightly via nightly.yml)
 
 ### Phase 5: Test Strength & Metrics (2/2)
 - [x] 14.29 — Mutation spike (Stryker evaluated; kernel 100%, integration 25%; no CI gate)
 - [x] 14.30 — CI metrics tracking (scripts/ci-metrics.js, baseline, targets, owner, SLA)
 
-### Phase 6: Documentation & Closeout (1/2)
+### Phase 6: Documentation & Closeout (2/2)
 - [x] 14.31 — Align docs (testing.md synced)
 - [x] 14.32 — **Closeout with Staging exception** (docs/epic14-closeout.md)
 
@@ -77,7 +77,7 @@ Epic 14: Frontend Testing Excellence and Confidence
 | CI Gates | 6 (lint, typecheck, kernel, integration, build, coverage artifact) |
 | Kernel Tests | 38/38 pass |
 | Integration Tests | 33/33 pass |
-| E2E Specs | 6 (happy-path, admin-probe, bearer, cookie, a11y x3) |
+| API E2E Tests | 3 (bearer, cookie, admin probe) |
 | Workflows | 4 (CI, nightly, disposable-e2e, release) |
 | Documentation Artifacts | 30+ (in tasks/epic-14/ + docs/) |
 | Coverage Artifact | 14-day retention (Vitest + kernel LCOV) |
@@ -96,7 +96,7 @@ Epic 14: Frontend Testing Excellence and Confidence
 | Build | ✅ |
 | Coverage artifact (14-day) | ✅ |
 | Nightly browser matrix | ✅ (scheduled) |
-| Disposable E2E | ✅ (on-demand) |
+| Disposable E2E (API) | ✅ (on-demand) |
 
 ---
 
