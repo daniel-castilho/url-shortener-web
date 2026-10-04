@@ -12,7 +12,7 @@ jobs:
   disposable-backend:
     name: Disposable Backend E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     permissions:
       contents: read
     steps:
@@ -34,26 +34,89 @@ jobs:
           RATE_LIMITER_AUTH_LIMIT: 100000
         run: |
           docker compose -f docker-compose.e2e.yaml up --build -d
-          # Wait for health endpoint - try both host port and container network
-          for i in {1..40}; do
-            # Try host port mapping first
+          
+          # Wait for backend to be healthy - try multiple approaches
+          echo "Waiting for backend to be healthy..."
+          HEALTHY=false
+          
+          for i in {1..60}; do
+            echo "Attempt $i/60: Checking backend health..."
+            
+            # Approach 1: Host port 8080
             if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "Backend healthy on localhost:8080"
+              echo "✓ Backend healthy on localhost:8080"
+              echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
+              HEALTHY=true
               break
             fi
-            # Try from within docker network using a temporary container
+            
+            # Approach 2: Host port 8081 (common management port)
+            if curl -sf http://localhost:8081/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy on localhost:8081"
+              echo "BACKEND_URL=http://localhost:8081" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            # Approach 3: Host port 9090 (another common management port)
+            if curl -sf http://localhost:9090/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy on localhost:9090"
+              echo "BACKEND_URL=http://localhost:9090" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            # Approach 4: Docker network - try service name
             if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8080/actuator/health >/dev/null 2>&1; then
-              echo "Backend healthy on container network (urlshortener-e2e-app:8080)"
-              # Export for later steps
+              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8080)"
               echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
+              HEALTHY=true
               break
             fi
-            sleep 3
+            
+            # Approach 5: Try service name on port 8081 in container network
+            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8081/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8081)"
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8081" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            # Approach 6: Try from within the app container itself
+            if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy from inside app container (localhost:8080)"
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            if docker exec urlshortener-e2e-app curl -sf http://localhost:8081/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy from inside app container (localhost:8081)"
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8081" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            echo "  Backend not ready yet, waiting 5s... (attempt $i/60)"
+            sleep 5
           done
-          # If we got BACKEND_URL, use it; otherwise default to localhost
-          if [ -z "$BACKEND_URL" ]; then
-            echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
+          
+          if [ "$HEALTHY" != "true" ]; then
+            echo "❌ Backend health check failed after 60 attempts"
+            echo "Debugging info:"
+            echo "--- Docker containers ---"
+            docker ps
+            echo "--- Container logs (app) ---"
+            docker logs urlshortener-e2e-app --tail 50
+            echo "--- Docker networks ---"
+            docker network ls
+            echo "--- Docker network inspect ---"
+            docker network inspect backend_url-shortener-e2e-net
+            exit 1
           fi
+          
+          echo "Backend is healthy at $BACKEND_URL"
+          
           # Seed data
           bash scripts/seed-e2e.sh
 
