@@ -2,7 +2,6 @@ name: Disposable Backend E2E
 
 on:
   workflow_dispatch:
-  # push trigger restored after hardening
 
 jobs:
   disposable-backend:
