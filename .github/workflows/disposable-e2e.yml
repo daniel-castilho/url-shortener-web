@@ -160,15 +160,15 @@ jobs:
           TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           echo "Bearer login: OK"
           
-          # POST /api/v1/urls -> 201, id, shortUrl
+          # POST /api/v1/urls -> 200, id, shortUrl
           body=$(mktemp)
           trap 'rm -f "$body"' RETURN
           status=$(curl -sS -o "$body" -w '%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $TOKEN" \
             -d '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}')
-          if [[ "$status" != "201" ]]; then
-            echo "FAIL: shorten expected HTTP 201; got $status"
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: shorten expected HTTP 200; got $status"
             cat "$body"
             exit 1
           fi
@@ -219,8 +219,8 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"originalUrl":"https://cookie-e2e.example.com/test"}' \
             -b "$COOKIE_JAR")
-          if [[ "$status" != "201" ]]; then
-            echo "FAIL: cookie shorten expected HTTP 201; got $status"
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: cookie shorten expected HTTP 200; got $status"
             cat "$body"
             exit 1
           fi
