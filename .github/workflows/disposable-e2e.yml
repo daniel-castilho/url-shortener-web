@@ -44,22 +44,30 @@ jobs:
           
           docker compose -f docker-compose.e2e.yaml -f docker-compose.override.yml up --build -d
           
-          # Wait for backend to be healthy - try multiple approaches
+          # Wait for backend to be healthy - use the correct liveness endpoint
           echo "Waiting for backend to be healthy..."
           HEALTHY=false
           
           for i in {1..60}; do
             echo "Attempt $i/60: Checking backend health..."
             
-            # Approach 1: Host port 8080
-            if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy on localhost:8080"
+            # Approach 1: Host port 8080 - use liveness endpoint (matches docker-compose healthcheck)
+            if curl -sf http://localhost:8080/actuator/health/liveness >/dev/null 2>&1; then
+              echo "✓ Backend healthy on localhost:8080/actuator/health/liveness"
               echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
             fi
             
-            # Approach 2: Host port 8081 (common management port)
+            # Approach 2: Host port 8080 - standard health endpoint
+            if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy on localhost:8080/actuator/health"
+              echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
+              HEALTHY=true
+              break
+            fi
+            
+            # Approach 3: Host port 8081 (common management port)
             if curl -sf http://localhost:8081/actuator/health >/dev/null 2>&1; then
               echo "✓ Backend healthy on localhost:8081"
               echo "BACKEND_URL=http://localhost:8081" >> $GITHUB_ENV
@@ -67,41 +75,33 @@ jobs:
               break
             fi
             
-            # Approach 3: Host port 9090 (another common management port)
-            if curl -sf http://localhost:9090/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy on localhost:9090"
-              echo "BACKEND_URL=http://localhost:9090" >> $GITHUB_ENV
-              HEALTHY=true
-              break
-            fi
-            
-            # Approach 4: Docker network - try service name
-            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8080/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8080)"
+            # Approach 4: Docker network - try service name with liveness
+            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8080/actuator/health/liveness >/dev/null 2>&1; then
+              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8080/actuator/health/liveness)"
               echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
             fi
             
-            # Approach 5: Try service name on port 8081 in container network
-            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8081/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8081)"
-              echo "BACKEND_URL=http://urlshortener-e2e-app:8081" >> $GITHUB_ENV
+            # Approach 5: Try service name on port 8080 standard health
+            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8080/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy on container network (urlshortener-e2e-app:8080/actuator/health)"
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
             fi
             
             # Approach 6: Try from within the app container itself
-            if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy from inside app container (localhost:8080)"
+            if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health/liveness >/dev/null 2>&1; then
+              echo "✓ Backend healthy from inside app container (localhost:8080/actuator/health/liveness)"
               echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
             fi
             
-            if docker exec urlshortener-e2e-app curl -sf http://localhost:8081/actuator/health >/dev/null 2>&1; then
-              echo "✓ Backend healthy from inside app container (localhost:8081)"
-              echo "BACKEND_URL=http://urlshortener-e2e-app:8081" >> $GITHUB_ENV
+            if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
+              echo "✓ Backend healthy from inside app container (localhost:8080/actuator/health)"
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
             fi
@@ -116,7 +116,7 @@ jobs:
             echo "--- Docker containers ---"
             docker ps
             echo "--- Container logs (app) ---"
-            docker logs urlshortener-e2e-app --tail 50
+            docker logs urlshortener-e2e-app --tail 100
             echo "--- Docker networks ---"
             docker network ls
             echo "--- Docker network inspect ---"
