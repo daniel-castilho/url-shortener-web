@@ -144,10 +144,41 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Start frontend preview server
+      - name: Start frontend preview server with API proxy
         run: |
-          npm run preview -- --host 0.0.0.0 --port 5173 &
+          # Create vite config with proxy for preview
+          cat > vite.config.preview.ts << 'EOF'
+          import { defineConfig } from 'vite'
+          import react from '@vitejs/plugin-react'
+          
+          export default defineConfig({
+            plugins: [react()],
+            server: {
+              proxy: {
+                '/api': {
+                  target: 'http://localhost:8080',
+                  changeOrigin: true,
+                  rewrite: (path) => path.replace(/^\/api/, '/api'),
+                },
+              },
+            },
+            preview: {
+              port: 5173,
+              host: '0.0.0.0',
+              proxy: {
+                '/api': {
+                  target: 'http://localhost:8080',
+                  changeOrigin: true,
+                  rewrite: (path) => path.replace(/^\/api/, '/api'),
+                },
+              },
+            },
+          })
+          EOF
+          
+          npx vite preview --config vite.config.preview.ts --host 0.0.0.0 --port 5173 &
           echo "FRONTEND_URL=http://localhost:5173" >> $GITHUB_ENV
+          
           # Wait for frontend to be ready
           for i in {1..30}; do
             if curl -sf http://localhost:5173 >/dev/null 2>&1; then
@@ -163,7 +194,7 @@ jobs:
       - name: Run Admin Probe (14.25)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
-          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
+          VITE_API_BASE_URL: http://localhost:8080
           E2E_EMAIL: admin@example.com
           E2E_PASSWORD: password123
         run: npx playwright test e2e/admin-probe.spec.ts
@@ -171,13 +202,13 @@ jobs:
       - name: Run Bearer E2E (14.23)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
-          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
+          VITE_API_BASE_URL: http://localhost:8080
         run: npx playwright test e2e/bearer-journey.spec.ts
 
       - name: Run Cookie E2E (14.24)
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
-          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
+          VITE_API_BASE_URL: http://localhost:8080
           VITE_AUTH_MODE: cookie
         run: npx playwright test e2e/cookie-session.spec.ts
 
