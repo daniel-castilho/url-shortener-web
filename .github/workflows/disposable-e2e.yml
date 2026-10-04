@@ -28,7 +28,6 @@ jobs:
           RATE_LIMITER_LIMIT: 100000
           RATE_LIMITER_AUTH_LIMIT: 100000
         run: |
-          # Create docker-compose override to fix logback permissions
           cat > docker-compose.override.yml << 'EOF'
           services:
             app:
@@ -40,7 +39,6 @@ jobs:
           
           docker compose -f docker-compose.e2e.yaml -f docker-compose.override.yml up --build -d
           
-          # Wait for backend to be healthy
           echo "Waiting for backend to be healthy..."
           HEALTHY=false
           
@@ -55,7 +53,7 @@ jobs:
             fi
             
             if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "Backend healthy on localhost:8080/actuator/health"
+              echo "Backend healthy on localhost:8080/actuctor/health"
               echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
@@ -90,7 +88,7 @@ jobs:
             fi
             
             if docker exec urlshortener-e2e-app curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-              echo "Backend healthy from inside app container (localhost:8080/actuator/health)"
+              echo "Backend healthy from inside app container (localhost:8080/actuctor/health)"
               echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
               HEALTHY=true
               break
@@ -102,7 +100,6 @@ jobs:
           
           if [ "$HEALTHY" != "true" ]; then
             echo "Backend health check failed after 60 attempts"
-            echo "Debugging info:"
             echo "--- Docker containers ---"
             docker ps
             echo "--- Container logs (app) ---"
@@ -115,8 +112,6 @@ jobs:
           fi
           
           echo "Backend is healthy at $BACKEND_URL"
-          
-          # Copy and run fixed seed script
           cp ../scripts/seed-e2e-fixed.sh .
           chmod +x seed-e2e-fixed.sh
           bash seed-e2e-fixed.sh
@@ -141,71 +136,56 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Helper: curl with status capture + JSON validation
-          api_call() {
-            local expected_status=$1
-            local method=$2
-            local url=$3
-            local data=$4
-            local headers=$5
-            local cookie_jar=$6
-            
-            body=$(mktemp)
-            trap 'rm -f "$body"' RETURN
-            
-            cmd=(curl -sS -o "$body" -w '%{http_code}' -X "$method" "$url")
-            [[ -n "$data" ]] && cmd+=(-d "$data")
-            [[ -n "$headers" ]] && cmd+=(-H "$headers")
-            [[ -n "$cookie_jar" ]] && cmd+=(-b "$cookie_jar" -c "$cookie_jar")
-            
-            status=$("${cmd[@]}")
-            
-            if [[ "$status" != "$expected_status" ]]; then
-              echo "FAIL: $method $url expected HTTP $expected_status; got $status"
-              cat "$body"
-              exit 1
-            fi
-            
-            echo "$body"
-          }
+          # Create Python validator using printf to avoid heredoc issues
+          printf 'import json, sys\nwith open(sys.argv[1]) as f:\n    payload = json.load(f)\nfor field in sys.argv[2:]:\n    if not payload.get(field):\n        print("FAIL: missing required field %s in response" %% field)\n        sys.exit(1)\nprint("OK: all required fields present (%%s)" %% ", ".join(sys.argv[2:]))\n' > /tmp/validate_json.py
           
-          # Helper: validate JSON response has required fields
           validate_json() {
-            local body=$1
-            shift
-            python3 - "$body" "$@" <<'PY'
-import json, sys
-with open(sys.argv[1]) as f:
-    payload = json.load(f)
-for field in sys.argv[2:]:
-    if not payload.get(field):
-        print(f"FAIL: missing required field '{field}' in response")
-        sys.exit(1)
-print(f"OK: all required fields present ({', '.join(sys.argv[2:])})")
-PY
+            python3 /tmp/validate_json.py "$@"
           }
           
           echo "=== Testing bearer auth flow ==="
           
           # POST /api/v1/auth/login -> 200, token
-          LOGIN_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/login" \
-            '{"email":"admin@example.com","password":"password123"}' \
-            "Content-Type: application/json")
-          validate_json "$LOGIN_BODY" token
-          TOKEN=$(echo "$LOGIN_BODY" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@example.com","password":"password123"}')
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: login expected HTTP 200; got $status"
+            cat "$body"
+            exit 1
+          fi
+          validate_json "$body" token
+          TOKEN=$(cat "$body" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           echo "Bearer login: OK"
           
           # POST /api/v1/urls -> 201, id, shortUrl
-          SHORTEN_BODY=$(api_call 201 POST "${API_BASE_URL}/api/v1/urls" \
-            '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}' \
-            "Content-Type: application/json" "Authorization: Bearer $TOKEN")
-          validate_json "$SHORTEN_BODY" id shortUrl
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"originalUrl":"https://api-e2e.example.com/test","customAlias":"api-e2e-test"}')
+          if [[ "$status" != "201" ]]; then
+            echo "FAIL: shorten expected HTTP 201; got $status"
+            cat "$body"
+            exit 1
+          fi
+          validate_json "$body" id shortUrl
           echo "Bearer shorten: OK"
           
           # GET /api/v1/urls -> 200, items
-          LIST_BODY=$(api_call 200 GET "${API_BASE_URL}/api/v1/urls" \
-            "" "Authorization: Bearer $TOKEN")
-          validate_json "$LIST_BODY" items
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X GET "${API_BASE_URL}/api/v1/urls" \
+            -H "Authorization: Bearer $TOKEN")
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: list expected HTTP 200; got $status"
+            cat "$body"
+            exit 1
+          fi
+          validate_json "$body" items
           echo "Bearer list: OK"
           
           echo "=== Testing cookie flow ==="
@@ -214,10 +194,17 @@ PY
           trap 'rm -f "$COOKIE_JAR"' RETURN
           
           # POST /api/v1/auth/login (cookie) -> 200, cookies set
-          COOKIE_LOGIN_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/login" \
-            '{"email":"admin@example.com","password":"password123"}' \
-            "Content-Type: application/json" "$COOKIE_JAR")
-          # Validate cookies were set
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@example.com","password":"password123"}' \
+            -c "$COOKIE_JAR" -b "$COOKIE_JAR")
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: cookie login expected HTTP 200; got $status"
+            cat "$body"
+            exit 1
+          fi
           if ! grep -q "access_token" "$COOKIE_JAR" || ! grep -q "refresh_token" "$COOKIE_JAR"; then
             echo "FAIL: cookies not set in cookie jar"
             cat "$COOKIE_JAR"
@@ -226,16 +213,31 @@ PY
           echo "Cookie login: OK (access_token + refresh_token cookies set)"
           
           # POST /api/v1/urls (cookie) -> 201, id
-          COOKIE_SHORTEN_BODY=$(api_call 201 POST "${API_BASE_URL}/api/v1/urls" \
-            '{"originalUrl":"https://cookie-e2e.example.com/test"}' \
-            "Content-Type: application/json" "$COOKIE_JAR")
-          validate_json "$COOKIE_SHORTEN_BODY" id
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/urls" \
+            -H "Content-Type: application/json" \
+            -d '{"originalUrl":"https://cookie-e2e.example.com/test"}' \
+            -b "$COOKIE_JAR")
+          if [[ "$status" != "201" ]]; then
+            echo "FAIL: cookie shorten expected HTTP 201; got $status"
+            cat "$body"
+            exit 1
+          fi
+          validate_json "$body" id
           echo "Cookie shorten: OK"
           
           # POST /api/v1/auth/refresh (cookie) -> 200, token, refreshToken
-          REFRESH_BODY=$(api_call 200 POST "${API_BASE_URL}/api/v1/auth/refresh" \
-            "" "" "$COOKIE_JAR")
-          validate_json "$REFRESH_BODY" token refreshToken
+          body=$(mktemp)
+          trap 'rm -f "$body"' RETURN
+          status=$(curl -sS -o "$body" -w '%%{http_code}' -X POST "${API_BASE_URL}/api/v1/auth/refresh" \
+            -b "$COOKIE_JAR")
+          if [[ "$status" != "200" ]]; then
+            echo "FAIL: refresh expected HTTP 200; got $status"
+            cat "$body"
+            exit 1
+          fi
+          validate_json "$body" token refreshToken
           echo "Cookie refresh: OK"
           
           echo "=== All API E2E tests passed ==="
@@ -248,12 +250,10 @@ PY
         run: |
           set -euo pipefail
           
-          # Admin probe API tests
           TOKEN=$(curl -sS -X POST "${API_BASE_URL}/api/v1/auth/login" \
             -H "Content-Type: application/json" \
             -d '{"email":"admin@example.com","password":"password123"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           
-          # Test admin users list
           USERS_RESP=$(curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users?limit=5")
           USER_COUNT=$(echo "$USERS_RESP" | python3 -c 'import sys,json;data=json.load(sys.stdin);print(len(data["items"]))')
           echo "Users: $USER_COUNT"
@@ -262,10 +262,8 @@ PY
             exit 1
           fi
           
-          # Test admin user urls (may fail if user not found, that's ok)
           curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/users/demo-user-id/urls" | python3 -c 'import sys,json;data=json.load(sys.stdin);print("User URLs:", len(data["items"]))' || true
           
-          # Test admin url lookup
           LOOKUP_RESP=$(curl -sf -H "Authorization: Bearer $TOKEN" "${API_BASE_URL}/api/v1/admin/urls?code=api-e2e-test")
           HAS_ITEM=$(echo "$LOOKUP_RESP" | python3 -c 'import sys,json;data=json.load(sys.stdin);print("item" in data)')
           if [ "$HAS_ITEM" != "True" ]; then
