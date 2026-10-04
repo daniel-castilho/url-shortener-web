@@ -12,7 +12,7 @@ jobs:
   disposable-backend:
     name: Disposable Backend E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 55
     permissions:
       contents: read
     steps:
@@ -33,7 +33,16 @@ jobs:
           RATE_LIMITER_LIMIT: 100000
           RATE_LIMITER_AUTH_LIMIT: 100000
         run: |
-          docker compose -f docker-compose.e2e.yaml up --build -d
+          # Create docker-compose override to ensure logs directory exists
+          cat > docker-compose.override.yml << 'EOF'
+          services:
+            app:
+              volumes:
+                - ./logs:/app/logs
+              command: ["sh", "-c", "mkdir -p /app/logs && java -jar app.jar"]
+          EOF
+          
+          docker compose -f docker-compose.e2e.yaml -f docker-compose.override.yml up --build -d
           
           # Wait for backend to be healthy - try multiple approaches
           echo "Waiting for backend to be healthy..."
