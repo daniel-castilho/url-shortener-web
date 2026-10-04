@@ -11,7 +11,7 @@ Epic 14: Frontend Testing Excellence and Confidence
 ### Phase 0: Baseline & Policy (3/3)
 - [x] 14.1 — Re-baseline test portfolio
 - [x] 14.2 — Risk-to-test map
-- [x] 14.3 — Environment & safety policy (Staging pending)
+- [x] 14.3 — Environment & safety policy (Staging pending — env not provisioned)
 
 ### Phase 1: Gates & Measurement (5/5)
 - [x] 14.4 — CI gates authoritative (lint+typecheck+test+integration+build required)
@@ -33,38 +33,38 @@ Epic 14: Frontend Testing Excellence and Confidence
 - [x] 14.19 — Automated a11y (axe on 3 anonymous routes; authenticated pending)
 - [x] 14.20 — AT evidence template (NVDA + VoiceOver; manual runs pending)
 - [x] 14.21 — Client security regression cases (OWASP mapped)
-- [x] 14.22 — **Disposable backend E2E integration** (docker-compose.e2e.yaml + seed-e2e.sh)
-- [x] 14.23 — **Bearer E2E journey** (API-level: login→shorten→list; explicit assertions on disposable backend)
-- [x] 14.24 — **Cookie E2E journey** (API-level: cookie mode, no sessionStorage, refresh; explicit assertions)
-- [x] 14.25 — **Admin probe** (API-level on disposable backend; contract assertions)
-- [x] 14.28 — Browser matrix (Chromium required per PR; Firefox/WebKit nightly via nightly.yml)
+- [x] 14.22 — Disposable backend E2E integration (docker-compose.e2e.yaml + seed-e2e.sh)
+- [x] 14.23 — Bearer E2E journey (API-level; explicit assertions on disposable backend)
+- [x] 14.24 — Cookie E2E journey (API-level; cookie mode + refresh; explicit assertions)
+- [x] 14.25 — Admin probe (API-level; contract assertions)
+- [x] 14.28 — Browser matrix (Chromium required/PR; Firefox/WebKit nightly)
 
 ### Phase 5: Test Strength & Metrics (2/2)
-- [x] 14.29 — Mutation spike (Stryker evaluated; kernel 100%, integration 25%; no CI gate)
+- [x] 14.29 — Mutation spike (Stryker; kernel 100%, integration 25%; no CI gate)
 - [x] 14.30 — CI metrics tracking (scripts/ci-metrics.js, baseline, targets, owner, SLA)
 
 ### Phase 6: Documentation & Closeout (2/2)
 - [x] 14.31 — Align docs (testing.md synced)
-- [x] 14.32 — **Closeout with Staging exception** (docs/epic14-closeout.md)
+- [x] 14.32 — Closeout with Staging exception (docs/epic14-closeout.md)
 
 ---
 
-## BLOCKED (2/32 — DevOps dependency)
+## BLOCKED (2/32 — Staging not provisioned)
 
 | Story | Status | Resolution |
 |-------|--------|------------|
-| 14.26 | Staging readiness | DevOps sign-off on staging-readiness.md (deferred) |
-| 14.27 | Staging smoke | Requires 14.26 + explicit auth (deferred) |
+| 14.26 | Staging readiness | **Environment not available.** DevOps must provision staging + sign off on `docs/staging-readiness.md`. Tracked as TD-EPIC14-STAGING. |
+| 14.27 | Staging smoke | Requires 14.26 + available staging env. Tracked as TD-EPIC14-STAGING. |
 
 ---
 
-## ACCEPTED GAPS (Documented in Closeout)
+## ACCEPTED GAPS / TECH DEBT
 
 | Area | Gap | Reason |
 |------|-----|--------|
 | 14.19 | Authenticated routes not axe-tested | Requires login fixture; follow-up |
 | 14.20 | NVDA/VoiceOver runs not executed | Human testers needed; template ready |
-| 14.26/14.27 | Staging not ready | DevOps dependency; exception documented |
+| 14.26/14.27 | **Staging not provisioned** | No staging environment available yet. TD-EPIC14-STAGING (Medium, DevOps+FE Lead, next release cycle). |
 | 14.29 | Mutation gate not added | Performance too slow; spike complete |
 | 14.6 | Coverage thresholds not enforced | Baseline below some targets; follow-up PR |
 
@@ -72,46 +72,29 @@ Epic 14: Frontend Testing Excellence and Confidence
 
 ## EVIDENCE SUMMARY
 
-| Category | Count/Link |
+| Category | Link/Value |
 |----------|-----------|
-| CI Gates | 6 (lint, typecheck, kernel, integration, build, coverage artifact) |
-| Kernel Tests | 38/38 pass |
-| Integration Tests | 33/33 pass |
-| API E2E Tests | 3 (bearer, cookie, admin probe) — explicit assertions |
-| Workflows | 4 (CI, nightly, disposable-e2e, release) |
-| Evidence Files | 14.23–25: `tasks/epic-14/14.23-25-status.md` |
-| Workflow Runs | [37171238136](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171238136), [37171053424](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171053424) |
-| Coverage Artifact | 14-day retention (Vitest + kernel LCOV) |
-| Metrics Script | `scripts/ci-metrics.js` |
+| CI Gates | lint, typecheck, kernel, integration, build, coverage — all green |
+| Kernel | 38/38 |
+| Integration | 33/33 |
+| E2E (API-level) | 14.23–25: `tasks/epic-14/14.23-25-status.md` |
+| Runs | [37171238136](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171238136), [37171053424](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171053424) |
+| Technical Debt | `docs/epic14-closeout.md` → TD-EPIC14-STAGING |
 
 ---
 
-## GATES STATUS (All Green)
+## GATES STATUS
 
 | Gate | Status |
 |------|--------|
-| Lint | ✅ |
-| Typecheck | ✅ |
-| Kernel tests (38) | ✅ |
-| Integration tests (33) | ✅ |
-| Build | ✅ |
+| Lint/Typecheck/Kernel/Integration/Build | ✅ |
 | Coverage artifact (14-day) | ✅ |
-| Nightly browser matrix | ✅ (scheduled) |
-| Disposable E2E (API) | ✅ (on-demand) |
+| Disposable E2E (API-level) | ✅ |
 
 ---
 
-## STAGING EXCEPTION (Pending Approval)
+## STAGING EXCEPTION
+Staging smoke (14.26–14.27) not mandatory for 5/5 because staging is **not provisioned** (TD-EPIC14-STAGING). Compensating evidence: bearer/cookie journeys + admin probe on disposable backend. Time-bounded; revisit next release cycle once environment exists.
 
-**Exception:** Staging smoke (14.26/14.27) not mandatory for 5/5  
-**Rationale:** Critical full-stack journeys (bearer 14.23, cookie 14.24) + safety checks (admin probe 14.25) pass on approved disposable backend; core quality gates all green.  
-**Terms:** Time-bounded exception; review at next release cycle; not a Staging validation.  
-**Owner Approval:** Pending sign-off in `docs/epic14-closeout.md`  
-**DevOps:** Required on `docs/staging-readiness.md` if Staging pursued
-
----
-
-## CLOSEOUT STATUS: PENDING OWNER SIGN-OFF
-
-**Epic 14 Closeout Document:** `docs/epic14-closeout.md` (decision, date, owner signature pending)  
-**5/5 Decision:** Pending owner sign-off with documented Staging exception
+## CLOSEOUT
+**Status:** CLOSEOUT with exceptions. **Owner sign-off pending** (`docs/epic14-closeout.md`).

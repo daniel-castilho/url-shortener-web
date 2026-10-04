@@ -12,7 +12,7 @@ Epic 14: Frontend Testing Excellence and Confidence. Implemented 30/32 stories w
 ## Accepted Gaps
 - 14.19: Authenticated routes a11y (requires auth fixture) — follow-up
 - 14.20: NVDA/VoiceOver manual runs — template at `docs/at-test-evidence.md`; not executed
-- 14.26/14.27: Staging — DevOps dependency; time-bounded exception
+- 14.26/14.27: **Staging environment not provisioned** — DevOps dependency; cannot execute at this time. Marked as Technical Debt (TD-EPIC14-STAGING). Requires DevOps sign-off on `docs/staging-readiness.md` and environment availability before execution.
 - 14.29: Mutation gate not added (perf; spike complete)
 - 14.6: Coverage thresholds not enforced (follow-up)
 
@@ -28,7 +28,12 @@ Epic 14: Frontend Testing Excellence and Confidence. Implemented 30/32 stories w
 - AT template: `docs/at-test-evidence.md`
 
 ## Staging Exception
-Staging smoke (14.26–14.27) is **not mandatory** for 5/5. Rationale: bearer/cookie journeys + admin probe pass on disposable backend; core gates green. Exception is time-bounded; review at next release. Requires DevOps sign-off on `docs/staging-readiness.md` before execution.
+Staging smoke (14.26–14.27) is **not mandatory** for 5/5. Rationale: bearer/cookie journeys + admin probe pass on disposable backend; core gates green. **Staging is not provisioned at present** (technical debt TD-EPIC14-STAGING) — exception is time-bounded and remains open until environment exists and tests executed.
+
+## Technical Debt
+| ID | Item | Priority | Owner | Target |
+|---|-----|----------|-------|--------|
+| TD-EPIC14-STAGING | Provision staging environment and execute 14.26–14.27 (readiness + smoke) | Medium | DevOps + FE Lead | Next release cycle |
 
 ## Approval (Pending)
 - **Decision:** Pending Owner approval
