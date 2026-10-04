@@ -12,7 +12,7 @@ jobs:
   disposable-backend:
     name: Disposable Backend E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -34,14 +34,26 @@ jobs:
           RATE_LIMITER_AUTH_LIMIT: 100000
         run: |
           docker compose -f docker-compose.e2e.yaml up --build -d
-          # Wait for health endpoint
-          for i in {1..30}; do
-            if curl -sf http://localhost:8080/actuator/health >/dev/null; then
-              echo "Backend healthy"
+          # Wait for health endpoint - try both host port and container network
+          for i in {1..40}; do
+            # Try host port mapping first
+            if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
+              echo "Backend healthy on localhost:8080"
               break
             fi
-            sleep 2
+            # Try from within docker network using a temporary container
+            if docker run --rm --network backend_url-shortener-e2e-net curlimages/curl:latest -sf http://urlshortener-e2e-app:8080/actuator/health >/dev/null 2>&1; then
+              echo "Backend healthy on container network (urlshortener-e2e-app:8080)"
+              # Export for later steps
+              echo "BACKEND_URL=http://urlshortener-e2e-app:8080" >> $GITHUB_ENV
+              break
+            fi
+            sleep 3
           done
+          # If we got BACKEND_URL, use it; otherwise default to localhost
+          if [ -z "$BACKEND_URL" ]; then
+            echo "BACKEND_URL=http://localhost:8080" >> $GITHUB_ENV
+          fi
           # Seed data
           bash scripts/seed-e2e.sh
 
@@ -62,19 +74,19 @@ jobs:
 
       - name: Run Admin Probe (14.25)
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
           E2E_EMAIL: admin@example.com
           E2E_PASSWORD: password123
         run: npx playwright test e2e/admin-probe.spec.ts
 
       - name: Run Bearer E2E (14.23)
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
         run: npx playwright test e2e/bearer-journey.spec.ts
 
       - name: Run Cookie E2E (14.24)
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: ${{ env.BACKEND_URL }}
           VITE_AUTH_MODE: cookie
         run: npx playwright test e2e/cookie-session.spec.ts
 
