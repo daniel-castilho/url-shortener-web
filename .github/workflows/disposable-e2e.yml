@@ -201,9 +201,12 @@ jobs:
             echo "FAIL: cookie login expected HTTP 200; got $status"
             exit 1
           fi
-          if ! grep -q "access_token" "$COOKIE_JAR" || ! grep -q "refresh_token" "$COOKIE_JAR"; then
-            echo "FAIL: cookies not set in cookie jar"
-            cat "$COOKIE_JAR"
+          if ! grep -q "access_token" "$COOKIE_JAR"; then
+            echo "FAIL: access_token cookie not set in cookie jar"
+            exit 1
+          fi
+          if ! grep -q "refresh_token" "$COOKIE_JAR"; then
+            echo "FAIL: refresh_token cookie not set in cookie jar"
             exit 1
           fi
           echo "Cookie login: OK (access_token + refresh_token cookies set)"
