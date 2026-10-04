@@ -33,13 +33,14 @@ jobs:
           RATE_LIMITER_LIMIT: 100000
           RATE_LIMITER_AUTH_LIMIT: 100000
         run: |
-          # Create docker-compose override to ensure logs directory exists
+          # Create docker-compose override to fix logback permissions
           cat > docker-compose.override.yml << 'EOF'
           services:
             app:
+              user: "root"
               volumes:
                 - ./logs:/app/logs
-              command: ["sh", "-c", "mkdir -p /app/logs && java -jar app.jar"]
+              command: ["sh", "-c", "mkdir -p /app/logs && chmod 777 /app/logs && java -jar app.jar"]
           EOF
           
           docker compose -f docker-compose.e2e.yaml -f docker-compose.override.yml up --build -d
