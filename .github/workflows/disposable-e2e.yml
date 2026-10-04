@@ -145,7 +145,7 @@ jobs:
         run: npm run build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
       - name: Run Admin Probe (14.25)
         env:
