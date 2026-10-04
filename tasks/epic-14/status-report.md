@@ -1,8 +1,8 @@
 # Epic 14 Final Status Report — CLOSEOUT
 
 Epic 14: Frontend Testing Excellence and Confidence
-**Final SHA:** 0c166bc (main)
-**Status:** CLOSEOUT with documented Staging exception
+**Final SHA:** 74314ff (main)
+**Status:** CLOSEOUT with documented Staging exception (owner sign-off pending)
 
 ---
 
@@ -34,9 +34,9 @@ Epic 14: Frontend Testing Excellence and Confidence
 - [x] 14.20 — AT evidence template (NVDA + VoiceOver; manual runs pending)
 - [x] 14.21 — Client security regression cases (OWASP mapped)
 - [x] 14.22 — **Disposable backend E2E integration** (docker-compose.e2e.yaml + seed-e2e.sh)
-- [x] 14.23 — **Bearer E2E journey** (API-level: register→login→shorten→list→logout on disposable)
-- [x] 14.24 — **Cookie E2E journey** (API-level: cookie mode, no sessionStorage, refresh, logout on disposable)
-- [x] 14.25 — **Admin probe** (API-level on disposable backend; evidence captured)
+- [x] 14.23 — **Bearer E2E journey** (API-level: login→shorten→list; explicit assertions on disposable backend)
+- [x] 14.24 — **Cookie E2E journey** (API-level: cookie mode, no sessionStorage, refresh; explicit assertions)
+- [x] 14.25 — **Admin probe** (API-level on disposable backend; contract assertions)
 - [x] 14.28 — Browser matrix (Chromium required per PR; Firefox/WebKit nightly via nightly.yml)
 
 ### Phase 5: Test Strength & Metrics (2/2)
@@ -66,22 +66,23 @@ Epic 14: Frontend Testing Excellence and Confidence
 | 14.20 | NVDA/VoiceOver runs not executed | Human testers needed; template ready |
 | 14.26/14.27 | Staging not ready | DevOps dependency; exception documented |
 | 14.29 | Mutation gate not added | Performance too slow; spike complete |
-| 14.6 | Thresholds not enforced | Baseline below some targets; follow-up PR |
+| 14.6 | Coverage thresholds not enforced | Baseline below some targets; follow-up PR |
 
 ---
 
 ## EVIDENCE SUMMARY
 
-| Category | Count |
-|----------|-------|
+| Category | Count/Link |
+|----------|-----------|
 | CI Gates | 6 (lint, typecheck, kernel, integration, build, coverage artifact) |
 | Kernel Tests | 38/38 pass |
 | Integration Tests | 33/33 pass |
-| API E2E Tests | 3 (bearer, cookie, admin probe) |
+| API E2E Tests | 3 (bearer, cookie, admin probe) — explicit assertions |
 | Workflows | 4 (CI, nightly, disposable-e2e, release) |
-| Documentation Artifacts | 30+ (in tasks/epic-14/ + docs/) |
+| Evidence Files | 14.23–25: `tasks/epic-14/14.23-25-status.md` |
+| Workflow Runs | [37171238136](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171238136), [37171053424](https://github.com/daniel-castilho/url-shortener-web/actions/runs/37171053424) |
 | Coverage Artifact | 14-day retention (Vitest + kernel LCOV) |
-| Metrics Script | scripts/ci-metrics.js |
+| Metrics Script | `scripts/ci-metrics.js` |
 
 ---
 
@@ -100,17 +101,17 @@ Epic 14: Frontend Testing Excellence and Confidence
 
 ---
 
-## STAGING EXCEPTION (Approved)
+## STAGING EXCEPTION (Pending Approval)
 
 **Exception:** Staging smoke (14.26/14.27) not mandatory for 5/5  
 **Rationale:** Critical full-stack journeys (bearer 14.23, cookie 14.24) + safety checks (admin probe 14.25) pass on approved disposable backend; core quality gates all green.  
 **Terms:** Time-bounded exception; review at next release cycle; not a Staging validation.  
-**Owner Approval:** Required (sign-off in docs/epic14-closeout.md)
+**Owner Approval:** Pending sign-off in `docs/epic14-closeout.md`  
+**DevOps:** Required on `docs/staging-readiness.md` if Staging pursued
 
 ---
 
 ## CLOSEOUT STATUS: PENDING OWNER SIGN-OFF
 
-**Epic 14 Closeout Document:** `docs/epic14-closeout.md` (sign-off section pending)
-
+**Epic 14 Closeout Document:** `docs/epic14-closeout.md` (decision, date, owner signature pending)  
 **5/5 Decision:** Pending owner sign-off with documented Staging exception
