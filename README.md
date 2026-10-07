@@ -131,7 +131,19 @@ SITE_ADDRESS=uat.tyny.ca JAVA_UPSTREAM=localhost:8080 \
 Config: [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile) — env-driven,
 `handle` blocks in law order, `file_server` + `try_files` fallback for the SPA.
 
-#### Prod (NGINX, Blue/Green static)
+#### Prod — Compose + Caddy (current edge of record)
+
+Production runs on the deploy host's single-host Docker Compose stack (backend
+repo `deploy/compose`): the Caddy edge implements the law and serves the SPA
+from `${FRONTEND_DIR}/current` (read-only bind mount). Deployment is
+**manual-dispatch CD** — `.github/workflows/deploy-web.yml` →
+`production` environment review → `prod-host-web` runner →
+`scripts/deploy-frontend.sh` (gh release download + `sha256sum -c` + atomic
+`current` flip) → `scripts/smoke-web.sh` (read-only law + artifact legs) →
+fail-closed rollback. Recipe: [`docs/deploy.md`](docs/deploy.md) →
+*Continuous delivery*.
+
+#### Prod (NGINX, Blue/Green static, bare-metal alternative)
 
 Include [`deploy/nginx/spa.conf`](deploy/nginx/spa.conf) in the server block.
 The `root` points at a `spa` symlink flipped between `spa-blue`/`spa-green`
@@ -141,7 +153,9 @@ and reserved SPA paths take precedence over the short-code regex location.
 #### Release artifact
 
 Tagging `vX.Y.Z` triggers [`.github/workflows/release.yml`](.github/workflows/release.yml):
-`npm ci` + `npm run build` + `dist/` uploaded as a workflow artifact.
+`npm ci` + `npm run build` + dist archive + SBOM + `SHA256SUMS` published to a
+GitHub Release. Publishing an artifact does **not** deploy it — deploying is
+the CD workflow above.
 
 ## Commands
 

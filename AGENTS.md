@@ -119,6 +119,31 @@ simplified for the SPA:
   a GitHub Release. Recipe in `docs/deploy.md` → *Release artifacts*.
 - Pushing a tag: `git push origin vX.Y.Z` (after the release commit is pushed).
 
+### Continuous delivery (production)
+
+Production deployment is **manual-dispatch CD**, not automatic on tag. A push
+of `vX.Y.Z` tag only publishes the GitHub Release and its assets (by
+`release.yml`); **deploying** those assets to the Compose production edge is
+`deploy-web.yml`, dispatched by an operator and gated by the `production`
+environment reviewer. Canonical recipe: `docs/deploy.md` → *Continuous
+delivery*. Local, host-side tools (used by the workflow and for manual
+ops/recovery):
+
+```sh
+bash scripts/deploy-frontend.sh --placeholder      # minimal page (edge prep)
+bash scripts/deploy-frontend.sh vX.Y.Z             # gh release download + sha256 verify + flip
+bash scripts/deploy-frontend.sh --rollback vX.Y.Z  # point back at an extracted release
+bash scripts/deploy-frontend.sh --current          # what is live (readlink + VERSION)
+bash scripts/deploy-frontend.sh --self-test        # 6/6
+bash scripts/smoke-web.sh --expect-version vX.Y.Z  # read-only law + artifact legs (auto edge detect)
+bash scripts/smoke-web.sh --self-test
+```
+
+`smoke-web.sh` is read-only by design (no shorten, no `GET /{id}` redirect
+leg — that would write a `click_event`). Its throwaway pre-DNS edge uses the
+backend compose Caddyfile on the host (smoke contract); never commit a build
+into `frontend/` — it holds only `releases/*` + the `current` symlink.
+
 Every release commit also updates `CHANGELOG.md` (Keep a Changelog) and, if the
 wire contract changed, `docs/api-contract.md`.
 
@@ -159,6 +184,7 @@ src/
 | Tests                          | Kernel suite (`npm test` = `node --test` on `src/lib`) + integration suite (`npm run test:integration` = Vitest + jsdom + RTL + MSW on `src/**/*.spec.tsx`, no browsers); no coverage floors. Map in `docs/testing.md` |
 | Cookie/HttpOnly session        | RESOLVED (Epic 9 UAT): Java HttpOnly cookies (`access_token`/`refresh_token`, Secure+SameSite=Lax) verified end-to-end against the HTTPS same-origin Caddy edge — anonymous first paint, `/me` cookie rehydrate on reload, short-code 302, logout revocation. `sessionStorage` remains JS-readable by design (see `docs/twelve-factors.md`); three auth races found by the probe are fixed (see CHANGELOG Unreleased). Test coverage map in `docs/testing.md` |
 | Release SBOM                  | RESOLVED (Epic 12): tag workflow ships dist archive + CycloneDX SBOM + SHA256SUMS to artifact and GitHub Release; see *Releases & tagging* |
+| Production CD                 | IN PROGRESS (2026-10-07): `deploy-web.yml` (dispatch → `production` review → `prod-host-web` runner → `deploy-frontend.sh` + `smoke-web.sh` → fail-closed rollback) + host `deploy-frontend.sh`/`smoke-web.sh` landed; remaining: `production` environment + `prod-host-web` runner registration + main branch protection, first artifact pilot (v0.3.0, pre-DNS), then DNS cutover (owner-only) |
 
 ## Backend parity
 
