@@ -176,5 +176,8 @@ the job.
 Owners: the **`production` environment review** (human) approves each CD run;
 machine verification is the smoke suite. Deploys are independent of the backend
 tag (`deploy.yml` in the service repo is untouched). First real-artifact pilot
-targets `v0.3.0` (pre-DNS); DNS/port-forward cutover and post-cutover TLS
-verification are owned by the account owner.
+targets `v0.3.0` (pre-DNS). **Owner-blocked debt:** the public DNS / router
+port-forward / Let's Encrypt cutover has no public IP or port-forward yet —
+the owner owns those network steps (service runbook → *Edge routing & static
+frontend*); the smoke auto-detects the pre-cert edge and the CD never treats
+it as a failure.

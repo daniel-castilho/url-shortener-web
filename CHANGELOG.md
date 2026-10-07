@@ -27,6 +27,15 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 - **`docs/deploy.md`** — documents the Compose + Caddy production edge of
   record, the owner-approved actuator narrowing (trio proxied, `/actuator*`
   404 at the edge), and the full CD pipeline.
+- **Production CD pilot (pre-DNS).** First manual dispatch of `deploy-web.yml`
+  with `version=v0.3.0` succeeded end-to-end: `production` environment
+  auto-created and protected with a required-reviewer rule (via legacy
+  `repositories/{id}/environments` API — the current environments write API
+  returns 404 on this Free account), `prod-host-web` runner installed as
+  systemd service, checksum-verified atomic flip `current -> v0.3.0`, read-only
+  smoke 13/13 via the auto-detected throwaway edge, rollback skipped as
+  designed. The live-edge apex fix (`tyny.ca` → `https://www.tyny.ca` 308) is
+  applied on the host.
 
 ### Fixed
 
