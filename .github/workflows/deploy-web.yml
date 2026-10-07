@@ -88,6 +88,8 @@ jobs:
           echo "Previous: $PREV (rollback_supported=$ROLLBACK)"
 
       - name: Deploy release (checksum-verified, atomic flip)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/deploy-frontend.sh "${{ steps.input.outputs.version }}"
 
       - name: Smoke (edge routing law + artifact integrity, read-only)
