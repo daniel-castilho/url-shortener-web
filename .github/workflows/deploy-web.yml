@@ -1,0 +1,130 @@
+name: Deploy web (Compose production)
+
+# Continuous Deploy of the static SPA (url-shortener-web) to the single-host
+# Docker Compose production edge (Caddy serves ${FRONTEND_DIR}/current; the
+# routing law lives in docs/deploy.md). Mirrors the backend's deploy.yml.
+#
+# Runs ONLY on this repository's self-hosted runner (labels self-hosted,
+# prod-host) on the deploy host, and ONLY via manual dispatch — never on
+# pull_request (public repository hardening: an untrusted ref can never reach
+# the production runner).
+#
+# Path: validate tag -> preflight (host dirs/edge up/release assets) ->
+# deploy-frontend.sh (gh release download + sha256sum -c fail-closed + atomic
+# `current` symlink flip) -> smoke-web.sh (edge-law + artifact legs; auto
+# throwaway TLS internal edge pre-DNS) -> on failure fail-closed rollback to
+# the previous release.
+#
+# The `production` environment gates the job with a required reviewer.
+# Contract: docs/deploy.md §Continuous delivery.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to deploy (e.g. v0.3.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web-production
+  cancel-in-progress: false
+
+env:
+  FRONTEND_DIR: /home/daniel/projects/urlshortener/frontend
+  BACKEND_COMPOSE_DIR: /home/daniel/projects/urlshortener/url-shortener-service
+  WEB_REPO: daniel-castilho/url-shortener-web
+
+jobs:
+  deploy:
+    name: Deploy web to production
+    runs-on: [self-hosted, prod-host]
+    environment: production
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate version input
+        id: input
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "FAIL: version '$VERSION' is not vX.Y.Z (deploy-web.yml input contract)" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying $VERSION"
+
+      - name: Preflight (host dirs, edge up, release assets, rollback target)
+        id: preflight
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -d "$FRONTEND_DIR" ] || { echo "FAIL: FRONTEND_DIR '$FRONTEND_DIR' missing on host" >&2; exit 1; }
+          [ -f "$BACKEND_COMPOSE_DIR/deploy/compose/Caddyfile" ] \
+            || { echo "FAIL: backend edge config not found at $BACKEND_COMPOSE_DIR/deploy/compose/Caddyfile (smoke contract)" >&2; exit 1; }
+          docker inspect urlshortener-caddy >/dev/null 2>&1 \
+            || { echo "FAIL: urlshortener-caddy container is not running (compose edge down)" >&2; exit 1; }
+          for asset in "url-shortener-web-${VERSION}.tar.gz" "SHA256SUMS" "sbom-url-shortener-web-${VERSION}.json"; do
+            gh release view "$VERSION" --repo "$WEB_REPO" --json assets \
+              --jq ".assets[].name" 2>/dev/null | grep -qx "$asset" \
+              || { echo "FAIL: release $VERSION is missing asset '$asset'" >&2; exit 1; }
+          done
+          PREV=""
+          if [ -L "$FRONTEND_DIR/current" ]; then
+            PREV="$(basename "$(readlink "$FRONTEND_DIR/current")")"
+            [ -d "$FRONTEND_DIR/releases/$PREV" ] || PREV=""
+          fi
+          ROLLBACK="true"
+          [ -n "$PREV" ] || ROLLBACK="false"
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo "rollback_supported=$ROLLBACK" >> "$GITHUB_OUTPUT"
+          echo "Previous: $PREV (rollback_supported=$ROLLBACK)"
+
+      - name: Deploy release (checksum-verified, atomic flip)
+        run: bash scripts/deploy-frontend.sh "${{ steps.input.outputs.version }}"
+
+      - name: Smoke (edge routing law + artifact integrity, read-only)
+        run: bash scripts/smoke-web.sh --expect-version "${{ steps.input.outputs.version }}"
+
+      - name: Rollback to previous release (fail-closed)
+        if: failure() && steps.preflight.outcome == 'success'
+        env:
+          PREV: ${{ steps.preflight.outputs.prev }}
+        run: |
+          set -euo pipefail
+          if [ "${PREV:-}" = "v0.0.0-placeholder" ]; then
+            echo "ROLLBACK: previous release is the edge-preparation placeholder — redeploying it"
+          fi
+          [ -n "${PREV:-}" ] || { echo "ROLLBACK FAILED: no previous release to restore" >&2; exit 1; }
+          echo "ROLLBACK: restoring $PREV"
+          if ! bash scripts/deploy-frontend.sh --rollback "$PREV"; then
+            echo "ROLLBACK FAILED: could not restore $PREV (still-serving target = current artifact)" >&2
+            exit 1
+          fi
+          if bash scripts/smoke-web.sh --expect-version "$PREV"; then
+            echo "ROLLBACK OK: release $PREV is serving again"
+          else
+            echo "ROLLBACK DEGRADED: $PREV is live but smoke failed — manual intervention required" >&2
+            exit 1
+          fi
+
+      - name: Deploy summary
+        if: always()
+        run: |
+          {
+            echo "### Deploy web ${{ steps.input.outputs.version }}"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Version | \`${{ inputs.version }}\` |"
+            echo "| Previous | \`${{ steps.preflight.outputs.prev }}\` |"
+            echo "| Rollback supported | ${{ steps.preflight.outputs.rollback_supported }} |"
+            echo "| Result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

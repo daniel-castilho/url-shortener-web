@@ -8,6 +8,26 @@ See `AGENTS.md` → *Releases & tagging* for the release policy.
 
 ## [Unreleased]
 
+### Added
+
+- **Production continuous delivery** — `deploy-web.yml` (manual dispatch of a
+  `vX.Y.Z` release → `production` environment review → `prod-host-web`
+  self-hosted runner on the deploy host → `scripts/deploy-frontend.sh`
+  checksum-verified atomic `current` flip → `scripts/smoke-web.sh` read-only
+  law + artifact verification → fail-closed rollback to the previous release).
+  Canonical copy of `deploy-frontend.sh` moves here from the service repo
+  (transitional copy stays there until this lands). Deploys are independent of
+  the backend. Recipe + law in `docs/deploy.md`.
+- **`scripts/smoke-web.sh`** — read-only edge-verification suite (SPA root +
+  deep links, asset, short-code 404 JSON, `/api` 401 JSON, actuator trio
+  200/deny 404, apex 308, CSP/XFO/HSTS). Auto edge detection: post-DNS it
+  verifies the live edge over loopback (`--resolve`); pre-DNS it spins a
+  throwaway Caddy (`tls internal` `:8081/:8443` on the compose network, never
+  touching committed state). Self-test included.
+- **`docs/deploy.md`** — documents the Compose + Caddy production edge of
+  record, the owner-approved actuator narrowing (trio proxied, `/actuator*`
+  404 at the edge), and the full CD pipeline.
+
 ### Fixed
 
 - `docs/twelve-factors.md`: Corrected logout semantics — `POST /api/v1/auth/logout` clears cookies / local session; does not perform server-side JWT revocation or blocklist. Clarified cookie-mode XSS protection — HttpOnly cookies keep cookie values out of `document.cookie` and avoid persistent browser storage, but the backend still returns `token`/`refreshToken` in JSON responses, so XSS reading response bodies could still access tokens.
