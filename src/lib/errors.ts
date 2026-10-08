@@ -4,6 +4,8 @@ export function mapApiError(status: number, body?: string, retryAfterSec?: numbe
       return "Invalid data.";
     case 401:
       return "Session expired.";
+    case 402:
+      return body || "Quota exceeded. Upgrade your plan.";
     case 403:
       if (body && body.includes("Account blocked")) return "Account blocked.";
       return "You are not the owner of this link.";
